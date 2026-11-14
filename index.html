@@ -6,18 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>VISION AI</title>
 
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
+
 <style>
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
+  padding: 18px;
   background: #080b12;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
-  padding: 20px;
 }
 
 h1 {
@@ -25,15 +26,13 @@ h1 {
   margin-top: 15px;
 }
 
-p {
-  color: #aab4c5;
-}
+p { color: #aab4c5; }
 
 .camera {
   width: 100%;
-  max-width: 600px;
+  max-width: 650px;
   aspect-ratio: 4 / 3;
-  margin: 25px auto;
+  margin: 22px auto;
   background: #151b27;
   border: 2px solid #26354c;
   border-radius: 14px;
@@ -44,13 +43,12 @@ canvas {
   width: 100%;
   height: 100%;
   display: block;
-  object-fit: contain;
 }
 
 button {
   display: block;
   width: 100%;
-  max-width: 600px;
+  max-width: 650px;
   margin: 12px auto;
   padding: 16px;
   border: none;
@@ -61,50 +59,124 @@ button {
   font-weight: bold;
 }
 
-button:active {
-  background: #0755bd;
+button:active { background: #0755bd; }
+
+.panel {
+  max-width: 650px;
+  margin: 15px auto;
+  padding: 15px;
+  background: #151b27;
+  border: 1px solid #26354c;
+  border-radius: 12px;
+  text-align: left;
 }
 
-#status {
-  color: #5ee6a8;
-  margin-top: 20px;
-  font-size: 14px;
+.item {
+  padding: 11px 0;
+  border-bottom: 1px solid #293449;
 }
+
+.item:last-child { border-bottom: none; }
+
+.green { color: #5ee6a8; }
+.blue { color: #64b5ff; }
+.small { color: #aab4c5; font-size: 12px; }
+
+video { display: none; }
 </style>
 </head>
 
 <body>
 
 <h1>VISION AI</h1>
-<p>Teste de orientação da câmera</p>
+<p>Rastreamento inteligente de pessoas</p>
 
 <div class="camera">
   <canvas id="screen"></canvas>
 </div>
 
-<button onclick="startCamera()">ATIVAR CÂMERA</button>
-<button onclick="switchCamera()">TROCAR CÂMERA</button>
+<button id="startButton" onclick="startCamera()">
+  ATIVAR VISION AI
+</button>
 
-<div id="status">Câmera desligada</div>
+<button onclick="switchCamera()">
+  TROCAR CÂMERA
+</button>
 
-<video id="video" autoplay playsinline muted
-style="display:none"></video>
+<div class="panel">
+  <div id="status" class="green">Sistema aguardando ativação</div>
+  <div class="item">
+    <strong>Pessoas detectadas:</strong>
+    <span id="peopleCount" class="green">0</span>
+  </div>
+  <div class="item">
+    <strong>Rastreamento:</strong>
+    <span id="trackingStatus">Desativado</span>
+  </div>
+  <div class="item">
+    <strong>Modelo:</strong>
+    <span id="modelStatus">Não carregado</span>
+  </div>
+</div>
+
+<div class="panel">
+  <strong>ANÁLISE INDIVIDUAL</strong>
+  <div id="peopleList" class="small">
+    Nenhuma pessoa identificada.
+  </div>
+</div>
+
+<video id="video" autoplay playsinline muted></video>
 
 <script>
 const video = document.getElementById("video");
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
+
 const statusText = document.getElementById("status");
+const peopleCount = document.getElementById("peopleCount");
+const trackingStatus = document.getElementById("trackingStatus");
+const modelStatus = document.getElementById("modelStatus");
+const peopleList = document.getElementById("peopleList");
 
 let stream = null;
 let cameraMode = "user";
-let animation = null;
+let model = null;
+let running = false;
+let detecting = false;
+
+let tracks = [];
+let nextID = 1;
+let latestDetections = [];
+let lastDetectionTime = 0;
+
+const DETECTION_INTERVAL = 350;
+const TRACK_TIMEOUT = 1400;
+
+async function loadAI() {
+  if (model) return;
+
+  statusText.textContent = "Carregando inteligência artificial...";
+  modelStatus.textContent = "Carregando...";
+
+  await tf.ready();
+
+  model = await cocoSsd.load({
+    base: "lite_mobilenet_v2"
+  });
+
+  modelStatus.textContent = "COCO-SSD carregado";
+}
 
 async function startCamera() {
   try {
     stopCamera();
 
-    statusText.textContent = "Iniciando câmera...";
+    statusText.textContent = "Preparando sistema...";
+
+    await loadAI();
+
+    statusText.textContent = "Solicitando câmera...";
 
     stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
@@ -118,54 +190,234 @@ async function startCamera() {
     video.srcObject = stream;
     await video.play();
 
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+
+    tracks = [];
+    nextID = 1;
+    latestDetections = [];
+
+    running = true;
+
     statusText.textContent =
       cameraMode === "user"
-      ? "Câmera frontal ativa — correção de espelhamento"
-      : "Câmera traseira ativa";
+      ? "VISION AI ativo — câmera frontal"
+      : "VISION AI ativo — câmera traseira";
 
-    drawCamera();
+    trackingStatus.textContent = "Ativo";
+
+    renderLoop();
 
   } catch (error) {
     statusText.textContent = "Erro: " + error.message;
+    modelStatus.textContent = model ? "Carregado" : "Falha";
   }
 }
 
-function drawCamera() {
-  if (!stream || video.readyState < 2) {
-    animation = requestAnimationFrame(drawCamera);
+// Prepara a imagem com a orientação correta
+function prepareFrame() {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  ctx.clearRect(0, 0, w, h);
+
+  if (cameraMode === "user") {
+    ctx.save();
+    ctx.translate(w, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, 0, 0, w, h);
+    ctx.restore();
+  } else {
+    ctx.drawImage(video, 0, 0, w, h);
+  }
+}
+
+// Detecta todas as pessoas encontradas
+async function detectPeople() {
+  if (!running || detecting || !model) return;
+
+  detecting = true;
+
+  try {
+    const predictions = await model.detect(canvas, 20, 0.45);
+
+    latestDetections = predictions
+      .filter(item =>
+        item.class === "person" &&
+        item.score >= 0.50
+      )
+      .map(item => ({
+        bbox: item.bbox,
+        score: item.score
+      }));
+
+    updateTracking(latestDetections);
+
+  } catch (error) {
+    statusText.textContent = "Erro durante a detecção";
+  }
+
+  detecting = false;
+}
+
+// Associa cada pessoa a um identificador
+function updateTracking(detections) {
+  const now = performance.now();
+
+  tracks = tracks.filter(
+    track => now - track.lastSeen < TRACK_TIMEOUT
+  );
+
+  const usedTracks = new Set();
+
+  for (const detection of detections) {
+    const [x, y, w, h] = detection.bbox;
+
+    const centerX = x + w / 2;
+    const centerY = y + h / 2;
+
+    let bestTrack = null;
+    let bestDistance = Infinity;
+
+    for (const track of tracks) {
+      if (usedTracks.has(track.id)) continue;
+
+      const distance = Math.hypot(
+        centerX - track.centerX,
+        centerY - track.centerY
+      );
+
+      const limit = Math.max(w, h, track.w, track.h) * 0.8;
+
+      if (distance < limit && distance < bestDistance) {
+        bestDistance = distance;
+        bestTrack = track;
+      }
+    }
+
+    if (bestTrack) {
+      bestTrack.centerX = centerX;
+      bestTrack.centerY = centerY;
+      bestTrack.x = x;
+      bestTrack.y = y;
+      bestTrack.w = w;
+      bestTrack.h = h;
+      bestTrack.score = detection.score;
+      bestTrack.lastSeen = now;
+
+      usedTracks.add(bestTrack.id);
+      detection.id = bestTrack.id;
+
+    } else {
+      const newTrack = {
+        id: nextID++,
+        centerX,
+        centerY,
+        x, y, w, h,
+        score: detection.score,
+        lastSeen: now
+      };
+
+      tracks.push(newTrack);
+      usedTracks.add(newTrack.id);
+      detection.id = newTrack.id;
+    }
+  }
+
+  updateInformation(detections);
+}
+
+function updateInformation(detections) {
+  peopleCount.textContent = detections.length;
+
+  if (detections.length === 0) {
+    peopleList.textContent = "Nenhuma pessoa identificada.";
     return;
   }
 
-  const width = video.videoWidth;
-  const height = video.videoHeight;
+  peopleList.innerHTML = "";
 
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
+  detections.forEach(person => {
+    const div = document.createElement("div");
+    div.className = "item";
+
+    const confidence = Math.round(person.score * 100);
+
+    div.innerHTML =
+      '<strong class="green">Pessoa ' +
+      String(person.id).padStart(2, "0") +
+      '</strong><br>' +
+      '<span class="small">Confiança da detecção: ' +
+      confidence +
+      '%</span><br>' +
+      '<span class="small">Distância: aguardando calibração</span><br>' +
+      '<span class="small">Atividade: aguardando análise corporal</span>';
+
+    peopleList.appendChild(div);
+  });
+}
+
+// Desenha os quadrados de cada pessoa
+function drawPeople() {
+  const w = canvas.width;
+  const h = canvas.height;
+
+  latestDetections.forEach(person => {
+    const [x, y, boxW, boxH] = person.bbox;
+
+    ctx.strokeStyle = "#00e5a0";
+    ctx.lineWidth = Math.max(3, w / 400);
+
+    ctx.strokeRect(x, y, boxW, boxH);
+
+    const label =
+      "PESSOA " + String(person.id).padStart(2, "0");
+
+    const fontSize = Math.max(16, w / 45);
+
+    ctx.font = "bold " + fontSize + "px Arial";
+
+    const labelWidth = ctx.measureText(label).width + 18;
+    const labelHeight = fontSize + 12;
+
+    const labelY = Math.max(0, y - labelHeight);
+
+    ctx.fillStyle = "#00a879";
+    ctx.fillRect(x, labelY, labelWidth, labelHeight);
+
+    ctx.fillStyle = "#ffffff";
+    ctx.fillText(label, x + 9, labelY + fontSize);
+  });
+}
+
+// Atualiza a tela continuamente
+function renderLoop() {
+  if (!running) return;
+
+  if (video.readyState >= 2) {
+    prepareFrame();
+
+    const now = performance.now();
+
+    if (
+      now - lastDetectionTime >= DETECTION_INTERVAL &&
+      !detecting
+    ) {
+      lastDetectionTime = now;
+      detectPeople();
+    }
+
+    drawPeople();
   }
 
-  ctx.clearRect(0, 0, width, height);
-
-  if (cameraMode === "user") {
-    // Desfaz o espelhamento da câmera frontal
-    ctx.save();
-    ctx.translate(width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, width, height);
-    ctx.restore();
-  } else {
-    // Câmera traseira sem espelhamento
-    ctx.drawImage(video, 0, 0, width, height);
+  if (running) {
+    requestAnimationFrame(renderLoop);
   }
-
-  animation = requestAnimationFrame(drawCamera);
 }
 
 function stopCamera() {
-  if (animation) {
-    cancelAnimationFrame(animation);
-    animation = null;
-  }
+  running = false;
+  detecting = false;
 
   if (stream) {
     stream.getTracks().forEach(track => track.stop());
@@ -173,10 +425,18 @@ function stopCamera() {
   }
 
   video.srcObject = null;
+
+  latestDetections = [];
+  tracks = [];
+
+  peopleCount.textContent = "0";
+  trackingStatus.textContent = "Desativado";
 }
 
 async function switchCamera() {
-  cameraMode = cameraMode === "user" ? "environment" : "user";
+  cameraMode =
+    cameraMode === "user" ? "environment" : "user";
+
   await startCamera();
 }
 
