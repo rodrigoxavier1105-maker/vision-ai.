@@ -206,7 +206,7 @@ footer{text-align:center;color:#665959;font-size:10px;padding:25px}
    </div>
    <div class="card">
     <div class="metric-title">DISPOSITIVO</div>
-    <div class="metric">Xiaomi</div>
+    <div class="metric" id="metricDevice">—</div>
    </div>
    <div class="card">
     <div class="metric-title">SESSÕES REGISTRADAS</div>
@@ -256,8 +256,8 @@ footer{text-align:center;color:#665959;font-size:10px;padding:25px}
    <div class="device">
     <div class="device-icon">▯</div>
     <div style="flex:1">
-     <div class="device-name">Meu Xiaomi</div>
-     <div class="device-info">Android · Dispositivo de laboratório</div>
+     <div class="device-name" id="deviceNameDisplay">Nenhum dispositivo conectado</div>
+     <div class="device-info" id="deviceInfoDisplay">Aguardando autenticação no NEXUS CORE</div>
     </div>
     <span class="tag" id="deviceStatus">DESCONECTADO</span>
    </div>
@@ -276,8 +276,8 @@ footer{text-align:center;color:#665959;font-size:10px;padding:25px}
    <div class="device">
     <div class="device-icon">▯</div>
     <div>
-     <div class="device-name">Xiaomi Android</div>
-     <div class="device-info">Dispositivo principal</div>
+     <div class="device-name">Aguardando dispositivo</div>
+     <div class="device-info">Nenhum aparelho autenticado</div>
     </div>
    </div>
    <div class="row">
@@ -315,7 +315,7 @@ footer{text-align:center;color:#665959;font-size:10px;padding:25px}
   <p class="sub">Identificação e segurança do laboratório.</p>
   <div class="card">
    <label>Nome do dispositivo</label>
-   <input id="deviceName" value="Meu Xiaomi">
+   <input id="deviceName" placeholder="Nome do dispositivo">
    <label>ID do dispositivo (será fornecido pelo aplicativo)</label>
    <input id="deviceId" placeholder="ID de conexão">
    <label>Endereço do servidor seguro</label>
