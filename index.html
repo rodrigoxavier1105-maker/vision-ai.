@@ -54,6 +54,11 @@ button {
   color: white;
   font-size: 16px;
   font-weight: bold;
+  cursor: pointer;
+}
+
+button:active {
+  background: #0755bd;
 }
 
 .panel {
@@ -75,6 +80,7 @@ button {
   color: #5ee6a8;
   font-size: 14px;
   line-height: 1.8;
+  overflow-wrap: anywhere;
 }
 
 #status {
@@ -94,8 +100,8 @@ button {
   <canvas id="screen"></canvas>
 </div>
 
-<button onclick="startCamera()">ATIVAR CÂMERA</button>
-<button onclick="switchCamera()">TROCAR CÂMERA</button>
+<button id="startButton" type="button">ATIVAR CÂMERA</button>
+<button id="switchButton" type="button">TROCAR CÂMERA</button>
 
 <div id="status">Câmera desligada</div>
 
@@ -120,6 +126,7 @@ button {
 style="display:none"></video>
 
 <script type="module">
+
 import {
   FilesetResolver,
   HandLandmarker,
@@ -135,6 +142,9 @@ const handsText = document.getElementById("hands");
 const facesText = document.getElementById("faces");
 const systemText = document.getElementById("system");
 
+const startButton = document.getElementById("startButton");
+const switchButton = document.getElementById("switchButton");
+
 const WASM =
 "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 
@@ -149,6 +159,7 @@ let cameraMode = "user";
 let animation = null;
 let running = false;
 let loading = false;
+let starting = false;
 
 let handModel = null;
 let faceModel = null;
@@ -157,10 +168,13 @@ let lastDetection = 0;
 let handResults = null;
 let faceResults = null;
 
+startButton.addEventListener("click", startCamera);
+switchButton.addEventListener("click", switchCamera);
+
 async function loadModels() {
   if (handModel && faceModel) return;
 
-  if (loading) return;
+  if (loading) throw new Error("Os modelos já estão carregando.");
 
   loading = true;
   systemText.textContent = "Carregando inteligência artificial...";
@@ -191,7 +205,8 @@ async function loadModels() {
       "Modelo de mãos: ativo | Modelo facial: ativo";
 
   } catch (error) {
-    systemText.textContent = "Erro ao carregar modelos: " + error.message;
+    systemText.textContent =
+      "Erro ao carregar modelos: " + error.message;
     throw error;
   } finally {
     loading = false;
@@ -199,10 +214,20 @@ async function loadModels() {
 }
 
 async function startCamera() {
+  if (starting) return;
+  starting = true;
+
+  startButton.disabled = true;
+  startButton.textContent = "INICIANDO...";
+
   try {
     stopCamera();
 
-    statusText.textContent = "Iniciando câmera...";
+    statusText.textContent = "Solicitando acesso à câmera...";
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error("Câmera indisponível. Abra o site em HTTPS.");
+    }
 
     stream = await navigator.mediaDevices.getUserMedia({
       audio: false,
@@ -216,16 +241,29 @@ async function startCamera() {
     video.srcObject = stream;
     await video.play();
 
-    statusText.textContent = "Câmera ativa. Inicializando IA...";
+    statusText.textContent =
+      "Câmera ativa. Inicializando inteligência artificial...";
 
     await loadModels();
 
     running = true;
     lastDetection = 0;
+
+    statusText.textContent =
+      cameraMode === "user"
+      ? "Câmera frontal ativa"
+      : "Câmera traseira ativa";
+
     drawCamera();
 
   } catch (error) {
     statusText.textContent = "Erro: " + error.message;
+    systemText.textContent = "Verifique a conexão e as permissões.";
+    stopCamera();
+  } finally {
+    starting = false;
+    startButton.disabled = false;
+    startButton.textContent = "ATIVAR CÂMERA";
   }
 }
 
@@ -246,8 +284,17 @@ function stopCamera() {
 }
 
 async function switchCamera() {
-  cameraMode = cameraMode === "user" ? "environment" : "user";
-  await startCamera();
+  cameraMode =
+    cameraMode === "user" ? "environment" : "user";
+
+  if (stream || running) {
+    await startCamera();
+  } else {
+    statusText.textContent =
+      cameraMode === "user"
+      ? "Câmera frontal selecionada"
+      : "Câmera traseira selecionada";
+  }
 }
 
 function drawCamera() {
@@ -267,7 +314,6 @@ function drawCamera() {
   ctx.clearRect(0, 0, width, height);
 
   if (cameraMode === "user") {
-    // Correção de espelhamento já validada
     ctx.save();
     ctx.translate(width, 0);
     ctx.scale(-1, 1);
@@ -279,7 +325,7 @@ function drawCamera() {
 
   const now = performance.now();
 
-  if (handModel && faceModel && now - lastDetection > 100) {
+  if (handModel && faceModel && now - lastDetection > 150) {
     lastDetection = now;
 
     try {
@@ -290,7 +336,8 @@ function drawCamera() {
       updateFaceInfo();
 
     } catch (error) {
-      systemText.textContent = "Falha na análise: " + error.message;
+      systemText.textContent =
+        "Falha na análise: " + error.message;
     }
   }
 
@@ -310,7 +357,7 @@ const connections = [
 ];
 
 function drawHands() {
-  if (!handResults || !handResults.landmarks) return;
+  if (!handResults?.landmarks) return;
 
   const width = canvas.width;
   const height = canvas.height;
@@ -339,19 +386,19 @@ function drawHands() {
       ctx.fill();
     });
 
-    const x = points[0].x * width;
-    const y = points[0].y * height;
-
     ctx.fillStyle = "#00e5ff";
     ctx.font = "bold 22px Arial";
-    ctx.fillText("MÃO " + (index + 1), x + 10, y - 15);
+    ctx.fillText(
+      "MÃO " + (index + 1),
+      points[0].x * width + 10,
+      points[0].y * height - 15
+    );
   });
 }
 
 function countFingers(points) {
   let count = 0;
 
-  // Quatro dedos principais
   const fingers = [
     [8,6],
     [12,10],
@@ -363,17 +410,12 @@ function countFingers(points) {
     if (points[tip].y < points[pip].y) count++;
   });
 
-  // Estimativa de abertura do polegar
-  const thumbTip = points[4];
-  const thumbIP = points[3];
-  const indexBase = points[5];
-
   const distance = (a,b) =>
     Math.hypot(a.x-b.x, a.y-b.y);
 
   if (
-    distance(thumbTip,indexBase) >
-    distance(thumbIP,indexBase) * 1.15
+    distance(points[4], points[5]) >
+    distance(points[3], points[5]) * 1.15
   ) {
     count++;
   }
@@ -407,7 +449,7 @@ function updateHandInfo() {
 }
 
 function drawFaces() {
-  if (!faceResults || !faceResults.faceLandmarks) return;
+  if (!faceResults?.faceLandmarks) return;
 
   const width = canvas.width;
   const height = canvas.height;
@@ -424,6 +466,7 @@ function drawFaces() {
 
     ctx.strokeStyle = "#00ff88";
     ctx.lineWidth = 3;
+
     ctx.strokeRect(
       minX * width,
       minY * height,
@@ -433,6 +476,7 @@ function drawFaces() {
 
     ctx.fillStyle = "#00ff88";
     ctx.font = "bold 22px Arial";
+
     ctx.fillText(
       "ROSTO " + (index+1),
       minX * width,
@@ -458,9 +502,14 @@ function updateFaceInfo() {
       faceResults.faceBlendshapes?.[index]?.categories || [];
 
     const score = name =>
-      categories.find(item => item.categoryName === name)?.score || 0;
+      categories.find(item =>
+        item.categoryName === name
+      )?.score || 0;
 
-    const smile = score("mouthSmileLeft") + score("mouthSmileRight");
+    const smile =
+      score("mouthSmileLeft") +
+      score("mouthSmileRight");
+
     const openMouth = score("jawOpen");
 
     if (smile > 0.8) {
@@ -470,13 +519,15 @@ function updateFaceInfo() {
     }
 
     const line = document.createElement("div");
-    line.textContent = "Rosto " + (index+1) + ": " + expression;
+    line.textContent =
+      "Rosto " + (index+1) + ": " + expression;
+
     facesText.appendChild(line);
   });
 }
 
 window.addEventListener("beforeunload", stopCamera);
-</script>
 
+</script>
 </body>
 </html>
