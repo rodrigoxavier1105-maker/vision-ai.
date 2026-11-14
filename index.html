@@ -7,27 +7,32 @@
 <title>VISION AI</title>
 
 <style>
-* { box-sizing: border-box; }
+* {
+  box-sizing: border-box;
+}
 
 body {
   margin: 0;
+  padding: 16px;
   background: #080b12;
   color: white;
   font-family: Arial, sans-serif;
   text-align: center;
-  padding: 16px;
 }
 
 h1 {
   letter-spacing: 4px;
-  margin-top: 15px;
+  margin: 15px 0 5px;
 }
 
-p { color: #aab4c5; }
+.subtitle {
+  color: #aab4c5;
+  font-size: 14px;
+}
 
 .camera {
   width: 100%;
-  max-width: 600px;
+  max-width: 650px;
   aspect-ratio: 4 / 3;
   margin: 20px auto;
   background: #151b27;
@@ -42,12 +47,16 @@ canvas {
   display: block;
 }
 
+.controls {
+  max-width: 650px;
+  margin: auto;
+}
+
 button {
   display: block;
   width: 100%;
-  max-width: 600px;
-  margin: 12px auto;
-  padding: 16px;
+  padding: 17px;
+  margin: 12px 0;
   border: none;
   border-radius: 10px;
   background: #1479ff;
@@ -55,16 +64,32 @@ button {
   font-size: 16px;
   font-weight: bold;
   cursor: pointer;
+  touch-action: manipulation;
 }
 
-button:active {
-  background: #0755bd;
+button:disabled {
+  opacity: .6;
+}
+
+#stopButton {
+  background: #bd3545;
+}
+
+#status {
+  max-width: 650px;
+  margin: 18px auto;
+  padding: 12px;
+  background: #111a29;
+  border-radius: 10px;
+  color: #5ee6a8;
+  font-size: 14px;
+  overflow-wrap: anywhere;
 }
 
 .panel {
-  max-width: 600px;
+  max-width: 650px;
   margin: 12px auto;
-  padding: 15px;
+  padding: 16px;
   background: #111a29;
   border: 1px solid #26354c;
   border-radius: 12px;
@@ -72,66 +97,89 @@ button:active {
 }
 
 .panel h3 {
-  margin-top: 0;
+  margin: 0 0 12px;
   color: #5da5ff;
+  font-size: 16px;
 }
 
 .result {
   color: #5ee6a8;
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.9;
   overflow-wrap: anywhere;
 }
 
-#status {
-  color: #5ee6a8;
-  margin: 18px auto;
-  font-size: 14px;
+.small {
+  color: #8997aa;
+  font-size: 12px;
+  margin-top: 8px;
 }
+
 </style>
 </head>
 
 <body>
 
 <h1>VISION AI</h1>
-<p>Sistema de visão computacional</p>
+<p class="subtitle">Sistema de visão computacional</p>
 
 <div class="camera">
   <canvas id="screen"></canvas>
 </div>
 
-<button id="startButton" type="button">ATIVAR CÂMERA</button>
-<button id="switchButton" type="button">TROCAR CÂMERA</button>
+<div class="controls">
+  <button id="startButton" type="button">
+    ATIVAR CÂMERA
+  </button>
 
-<div id="status">Câmera desligada</div>
+  <button id="switchButton" type="button">
+    TROCAR CÂMERA
+  </button>
+
+  <button id="stopButton" type="button">
+    DESLIGAR CÂMERA
+  </button>
+</div>
+
+<div id="status">Sistema pronto. Ative a câmera.</div>
 
 <div class="panel">
   <h3>IDENTIFICAÇÃO DE MÃOS</h3>
-  <div id="hands" class="result">Aguardando câmera...</div>
+  <div id="hands" class="result">
+    Aguardando câmera...
+  </div>
+  <div class="small">
+    Detecta mãos, dedos e gestos básicos.
+  </div>
 </div>
 
 <div class="panel">
   <h3>IDENTIFICAÇÃO FACIAL</h3>
-  <div id="faces" class="result">Aguardando câmera...</div>
-</div>
-
-<div class="panel">
-  <h3>SISTEMA</h3>
-  <div id="system" class="result">
-    Modelos aguardando inicialização.
+  <div id="faces" class="result">
+    Aguardando câmera...
+  </div>
+  <div class="small">
+    Detecta rostos e estima algumas expressões.
   </div>
 </div>
 
-<video id="video" autoplay playsinline muted
-style="display:none"></video>
+<div class="panel">
+  <h3>SISTEMA DE INTELIGÊNCIA ARTIFICIAL</h3>
+  <div id="system" class="result">
+    Modelos ainda não carregados.
+  </div>
+</div>
 
-<script type="module">
+<video
+  id="video"
+  autoplay
+  playsinline
+  muted
+  style="display:none">
+</video>
 
-import {
-  FilesetResolver,
-  HandLandmarker,
-  FaceLandmarker
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14";
+<script>
+"use strict";
 
 const video = document.getElementById("video");
 const canvas = document.getElementById("screen");
@@ -144,8 +192,9 @@ const systemText = document.getElementById("system");
 
 const startButton = document.getElementById("startButton");
 const switchButton = document.getElementById("switchButton");
+const stopButton = document.getElementById("stopButton");
 
-const WASM =
+const WASM_URL =
 "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
 
 const HAND_MODEL =
@@ -156,109 +205,88 @@ const FACE_MODEL =
 
 let stream = null;
 let cameraMode = "user";
-let animation = null;
 let running = false;
-let loading = false;
 let starting = false;
+let animation = null;
 
 let handModel = null;
 let faceModel = null;
 
-let lastDetection = 0;
+let modelsLoading = false;
+let modelsLoaded = false;
+
 let handResults = null;
 let faceResults = null;
+let lastDetection = 0;
+
+let lastVideoTime = -1;
 
 startButton.addEventListener("click", startCamera);
 switchButton.addEventListener("click", switchCamera);
+stopButton.addEventListener("click", stopCamera);
 
-async function loadModels() {
-  if (handModel && faceModel) return;
+function setStatus(message) {
+  statusText.textContent = message;
+}
 
-  if (loading) throw new Error("Os modelos já estão carregando.");
-
-  loading = true;
-  systemText.textContent = "Carregando inteligência artificial...";
-
-  try {
-    const vision = await FilesetResolver.forVisionTasks(WASM);
-
-    handModel = await HandLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: HAND_MODEL,
-        delegate: "CPU"
-      },
-      runningMode: "VIDEO",
-      numHands: 2
-    });
-
-    faceModel = await FaceLandmarker.createFromOptions(vision, {
-      baseOptions: {
-        modelAssetPath: FACE_MODEL,
-        delegate: "CPU"
-      },
-      runningMode: "VIDEO",
-      numFaces: 5,
-      outputFaceBlendshapes: true
-    });
-
-    systemText.textContent =
-      "Modelo de mãos: ativo | Modelo facial: ativo";
-
-  } catch (error) {
-    systemText.textContent =
-      "Erro ao carregar modelos: " + error.message;
-    throw error;
-  } finally {
-    loading = false;
-  }
+function setSystem(message) {
+  systemText.textContent = message;
 }
 
 async function startCamera() {
   if (starting) return;
-  starting = true;
 
+  if (running) {
+    setStatus("A câmera já está ligada.");
+    return;
+  }
+
+  starting = true;
   startButton.disabled = true;
   startButton.textContent = "INICIANDO...";
 
   try {
-    stopCamera();
+    setStatus("Solicitando acesso à câmera...");
 
-    statusText.textContent = "Solicitando acesso à câmera...";
-
-    if (!navigator.mediaDevices?.getUserMedia) {
-      throw new Error("Câmera indisponível. Abra o site em HTTPS.");
+    if (!navigator.mediaDevices ||
+        !navigator.mediaDevices.getUserMedia) {
+      throw new Error(
+        "Câmera indisponível. Abra o site em HTTPS."
+      );
     }
 
-    stream = await navigator.mediaDevices.getUserMedia({
-      audio: false,
-      video: {
-        facingMode: { ideal: cameraMode },
-        width: { ideal: 1280 },
-        height: { ideal: 720 }
-      }
-    });
+    const newStream =
+      await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: {
+          facingMode: { ideal: cameraMode },
+          width: { ideal: 1280 },
+          height: { ideal: 720 }
+        }
+      });
 
+    stream = newStream;
     video.srcObject = stream;
+
     await video.play();
 
-    statusText.textContent =
-      "Câmera ativa. Inicializando inteligência artificial...";
-
-    await loadModels();
-
     running = true;
-    lastDetection = 0;
+    lastVideoTime = -1;
 
-    statusText.textContent =
+    setStatus(
       cameraMode === "user"
-      ? "Câmera frontal ativa"
-      : "Câmera traseira ativa";
+      ? "Câmera frontal ligada."
+      : "Câmera traseira ligada."
+    );
 
     drawCamera();
 
+    if (!modelsLoaded && !modelsLoading) {
+      loadModels();
+    }
+
   } catch (error) {
-    statusText.textContent = "Erro: " + error.message;
-    systemText.textContent = "Verifique a conexão e as permissões.";
+    setStatus("Erro ao abrir câmera: " + error.message);
     stopCamera();
   } finally {
     starting = false;
@@ -270,7 +298,7 @@ async function startCamera() {
 function stopCamera() {
   running = false;
 
-  if (animation) {
+  if (animation !== null) {
     cancelAnimationFrame(animation);
     animation = null;
   }
@@ -281,68 +309,168 @@ function stopCamera() {
   }
 
   video.srcObject = null;
+
+  handResults = null;
+  faceResults = null;
+
+  handsText.textContent = "Câmera desligada.";
+  facesText.textContent = "Câmera desligada.";
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  setStatus("Câmera desligada.");
+  startButton.textContent = "ATIVAR CÂMERA";
 }
 
 async function switchCamera() {
   cameraMode =
     cameraMode === "user" ? "environment" : "user";
 
-  if (stream || running) {
+  if (running) {
+    stopCamera();
     await startCamera();
   } else {
-    statusText.textContent =
+    setStatus(
       cameraMode === "user"
-      ? "Câmera frontal selecionada"
-      : "Câmera traseira selecionada";
+      ? "Câmera frontal selecionada."
+      : "Câmera traseira selecionada."
+    );
+  }
+}
+
+async function loadModels() {
+  if (modelsLoaded || modelsLoading) return;
+
+  modelsLoading = true;
+
+  setSystem("Baixando modelos de inteligência artificial...");
+
+  try {
+    // A biblioteca é carregada somente agora.
+    // Uma falha aqui não impede os botões de funcionar.
+
+    const visionLibrary = await import(
+      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm"
+    );
+
+    const vision =
+      await visionLibrary.FilesetResolver.forVisionTasks(
+        WASM_URL
+      );
+
+    setSystem("Carregando identificador de mãos...");
+
+    handModel =
+      await visionLibrary.HandLandmarker.createFromOptions(
+        vision,
+        {
+          baseOptions: {
+            modelAssetPath: HAND_MODEL,
+            delegate: "CPU"
+          },
+          runningMode: "VIDEO",
+          numHands: 2
+        }
+      );
+
+    setSystem("Carregando identificador facial...");
+
+    faceModel =
+      await visionLibrary.FaceLandmarker.createFromOptions(
+        vision,
+        {
+          baseOptions: {
+            modelAssetPath: FACE_MODEL,
+            delegate: "CPU"
+          },
+          runningMode: "VIDEO",
+          numFaces: 5,
+          outputFaceBlendshapes: true
+        }
+      );
+
+    modelsLoaded = true;
+
+    setSystem(
+      "Mãos: ATIVO | Rostos: ATIVO"
+    );
+
+    setStatus("Câmera e inteligência artificial funcionando.");
+
+  } catch (error) {
+    console.error(error);
+
+    setSystem(
+      "Falha ao carregar IA: " + error.message
+    );
+
+    setStatus(
+      "Câmera funcionando. Verifique sua conexão para carregar a IA."
+    );
+
+  } finally {
+    modelsLoading = false;
   }
 }
 
 function drawCamera() {
-  if (!running || video.readyState < 2) {
-    if (running) animation = requestAnimationFrame(drawCamera);
-    return;
-  }
+  if (!running) return;
 
-  const width = video.videoWidth;
-  const height = video.videoHeight;
+  if (video.readyState >= 2) {
+    const width = video.videoWidth;
+    const height = video.videoHeight;
 
-  if (canvas.width !== width || canvas.height !== height) {
-    canvas.width = width;
-    canvas.height = height;
-  }
+    if (width && height) {
+      if (
+        canvas.width !== width ||
+        canvas.height !== height
+      ) {
+        canvas.width = width;
+        canvas.height = height;
+      }
 
-  ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, width, height);
 
-  if (cameraMode === "user") {
-    ctx.save();
-    ctx.translate(width, 0);
-    ctx.scale(-1, 1);
-    ctx.drawImage(video, 0, 0, width, height);
-    ctx.restore();
-  } else {
-    ctx.drawImage(video, 0, 0, width, height);
-  }
+      // Corrige a imagem da câmera frontal.
+      if (cameraMode === "user") {
+        ctx.save();
+        ctx.translate(width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, 0, 0, width, height);
+        ctx.restore();
+      } else {
+        ctx.drawImage(video, 0, 0, width, height);
+      }
 
-  const now = performance.now();
+      const now = performance.now();
 
-  if (handModel && faceModel && now - lastDetection > 150) {
-    lastDetection = now;
+      if (
+        modelsLoaded &&
+        now - lastDetection > 150 &&
+        video.currentTime !== lastVideoTime
+      ) {
+        lastDetection = now;
+        lastVideoTime = video.currentTime;
 
-    try {
-      handResults = handModel.detectForVideo(canvas, now);
-      faceResults = faceModel.detectForVideo(canvas, now);
+        try {
+          handResults =
+            handModel.detectForVideo(canvas, now);
 
-      updateHandInfo();
-      updateFaceInfo();
+          faceResults =
+            faceModel.detectForVideo(canvas, now);
 
-    } catch (error) {
-      systemText.textContent =
-        "Falha na análise: " + error.message;
+          updateHandInfo();
+          updateFaceInfo();
+
+        } catch (error) {
+          setSystem("Erro na análise: " + error.message);
+        }
+      }
+
+      drawHands();
+      drawFaces();
     }
   }
-
-  drawHands();
-  drawFaces();
 
   animation = requestAnimationFrame(drawCamera);
 }
@@ -357,19 +485,26 @@ const connections = [
 ];
 
 function drawHands() {
-  if (!handResults?.landmarks) return;
+  if (!handResults || !handResults.landmarks) return;
 
   const width = canvas.width;
   const height = canvas.height;
 
   handResults.landmarks.forEach((points, index) => {
+
     ctx.lineWidth = 4;
     ctx.strokeStyle = "#00e5ff";
 
     connections.forEach(([a,b]) => {
       ctx.beginPath();
-      ctx.moveTo(points[a].x * width, points[a].y * height);
-      ctx.lineTo(points[b].x * width, points[b].y * height);
+      ctx.moveTo(
+        points[a].x * width,
+        points[a].y * height
+      );
+      ctx.lineTo(
+        points[b].x * width,
+        points[b].y * height
+      );
       ctx.stroke();
     });
 
@@ -388,6 +523,7 @@ function drawHands() {
 
     ctx.fillStyle = "#00e5ff";
     ctx.font = "bold 22px Arial";
+
     ctx.fillText(
       "MÃO " + (index + 1),
       points[0].x * width + 10,
@@ -407,7 +543,9 @@ function countFingers(points) {
   ];
 
   fingers.forEach(([tip,pip]) => {
-    if (points[tip].y < points[pip].y) count++;
+    if (points[tip].y < points[pip].y) {
+      count++;
+    }
   });
 
   const distance = (a,b) =>
@@ -436,32 +574,43 @@ function updateHandInfo() {
   detected.forEach((points,index) => {
     const fingers = countFingers(points);
 
-    let gesture = fingers === 0
-      ? "Mão fechada (estimativa)"
-      : fingers === 5
-      ? "Mão aberta (estimativa)"
-      : fingers + " dedos";
+    let gesture;
+
+    if (fingers === 0) {
+      gesture = "Mão fechada (estimativa)";
+    } else if (fingers === 5) {
+      gesture = "Mão aberta (estimativa)";
+    } else {
+      gesture = fingers + " dedos";
+    }
 
     const line = document.createElement("div");
-    line.textContent = "Mão " + (index+1) + ": " + gesture;
+
+    line.textContent =
+      "Mão " + (index + 1) + ": " + gesture;
+
     handsText.appendChild(line);
   });
 }
 
 function drawFaces() {
-  if (!faceResults?.faceLandmarks) return;
+  if (!faceResults || !faceResults.faceLandmarks) return;
 
   const width = canvas.width;
   const height = canvas.height;
 
   faceResults.faceLandmarks.forEach((points,index) => {
-    let minX = 1, minY = 1, maxX = 0, maxY = 0;
+
+    let minX = 1;
+    let minY = 1;
+    let maxX = 0;
+    let maxY = 0;
 
     points.forEach(point => {
-      minX = Math.min(minX,point.x);
-      minY = Math.min(minY,point.y);
-      maxX = Math.max(maxX,point.x);
-      maxY = Math.max(maxY,point.y);
+      minX = Math.min(minX, point.x);
+      minY = Math.min(minY, point.y);
+      maxX = Math.max(maxX, point.x);
+      maxY = Math.max(maxY, point.y);
     });
 
     ctx.strokeStyle = "#00ff88";
@@ -470,15 +619,15 @@ function drawFaces() {
     ctx.strokeRect(
       minX * width,
       minY * height,
-      (maxX-minX) * width,
-      (maxY-minY) * height
+      (maxX - minX) * width,
+      (maxY - minY) * height
     );
 
     ctx.fillStyle = "#00ff88";
     ctx.font = "bold 22px Arial";
 
     ctx.fillText(
-      "ROSTO " + (index+1),
+      "ROSTO " + (index + 1),
       minX * width,
       minY * height - 10
     );
@@ -496,15 +645,19 @@ function updateFaceInfo() {
   facesText.innerHTML = "";
 
   detected.forEach((points,index) => {
+
     let expression = "Rosto detectado";
 
     const categories =
       faceResults.faceBlendshapes?.[index]?.categories || [];
 
-    const score = name =>
-      categories.find(item =>
-        item.categoryName === name
-      )?.score || 0;
+    const score = name => {
+      const item = categories.find(
+        item => item.categoryName === name
+      );
+
+      return item ? item.score : 0;
+    };
 
     const smile =
       score("mouthSmileLeft") +
@@ -519,8 +672,9 @@ function updateFaceInfo() {
     }
 
     const line = document.createElement("div");
+
     line.textContent =
-      "Rosto " + (index+1) + ": " + expression;
+      "Rosto " + (index + 1) + ": " + expression;
 
     facesText.appendChild(line);
   });
@@ -529,5 +683,6 @@ function updateFaceInfo() {
 window.addEventListener("beforeunload", stopCamera);
 
 </script>
+
 </body>
 </html>
