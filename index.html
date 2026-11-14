@@ -3,686 +3,228 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VISION AI</title>
-
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SENTINELA AI</title>
 <style>
-* {
-  box-sizing: border-box;
+*{box-sizing:border-box}
+body{
+ margin:0;background:#080d13;color:#eaf1f7;
+ font-family:Arial,sans-serif;padding:20px;
 }
-
-body {
-  margin: 0;
-  padding: 16px;
-  background: #080b12;
-  color: white;
-  font-family: Arial, sans-serif;
-  text-align: center;
+header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+.logo{
+ width:43px;height:43px;border-radius:12px;
+ background:#142d32;color:#55d6ad;
+ display:grid;place-items:center;font-size:23px
 }
-
-h1 {
-  letter-spacing: 4px;
-  margin: 15px 0 5px;
+h1{font-size:19px;margin:0;letter-spacing:1px}
+header p{margin:4px 0 0;color:#81909e;font-size:12px}
+.status{margin-left:auto;color:#55d6ad;font-size:11px}
+main{max-width:650px;margin:auto}
+.camera{
+ width:100%;background:#111a24;border:1px solid #263443;
+ border-radius:15px;overflow:hidden;position:relative;
 }
-
-.subtitle {
-  color: #aab4c5;
-  font-size: 14px;
+video{display:none}
+canvas{display:block;width:100%;height:auto;min-height:220px}
+.placeholder{
+ position:absolute;inset:0;display:grid;place-items:center;
+ color:#718294;font-size:14px;pointer-events:none
 }
-
-.camera {
-  width: 100%;
-  max-width: 650px;
-  aspect-ratio: 4 / 3;
-  margin: 20px auto;
-  background: #151b27;
-  border: 2px solid #26354c;
-  border-radius: 14px;
-  overflow: hidden;
+.controls{display:flex;gap:10px;margin:15px 0}
+button{
+ border:0;border-radius:10px;padding:15px 12px;
+ font-size:14px;font-weight:bold;cursor:pointer
 }
-
-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
+#start{background:#43c69b;color:#06130f;flex:1}
+#stop{background:#253341;color:white}
+.stats{
+ display:grid;grid-template-columns:1fr 1fr;gap:12px
 }
-
-.controls {
-  max-width: 650px;
-  margin: auto;
+.stat{
+ background:#111a24;border:1px solid #263443;
+ padding:17px;border-radius:12px
 }
-
-button {
-  display: block;
-  width: 100%;
-  padding: 17px;
-  margin: 12px 0;
-  border: none;
-  border-radius: 10px;
-  background: #1479ff;
-  color: white;
-  font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-  touch-action: manipulation;
+.stat small{color:#91a0af;font-size:11px}
+.stat strong{display:block;font-size:28px;margin-top:8px}
+.events{
+ margin-top:14px;background:#111a24;
+ border:1px solid #263443;border-radius:12px;padding:16px
 }
-
-button:disabled {
-  opacity: .6;
-}
-
-#stopButton {
-  background: #bd3545;
-}
-
-#status {
-  max-width: 650px;
-  margin: 18px auto;
-  padding: 12px;
-  background: #111a29;
-  border-radius: 10px;
-  color: #5ee6a8;
-  font-size: 14px;
-  overflow-wrap: anywhere;
-}
-
-.panel {
-  max-width: 650px;
-  margin: 12px auto;
-  padding: 16px;
-  background: #111a29;
-  border: 1px solid #26354c;
-  border-radius: 12px;
-  text-align: left;
-}
-
-.panel h3 {
-  margin: 0 0 12px;
-  color: #5da5ff;
-  font-size: 16px;
-}
-
-.result {
-  color: #5ee6a8;
-  font-size: 14px;
-  line-height: 1.9;
-  overflow-wrap: anywhere;
-}
-
-.small {
-  color: #8997aa;
-  font-size: 12px;
-  margin-top: 8px;
-}
-
+.events h3{font-size:14px;margin:0 0 12px}
+#log{font-size:12px;color:#aab8c5;line-height:1.8}
+footer{text-align:center;color:#526171;font-size:11px;margin:22px}
 </style>
 </head>
-
 <body>
+<header>
+ <div class="logo">⬡</div>
+ <div>
+  <h1>SENTINELA AI</h1>
+  <p>Monitoramento inteligente</p>
+ </div>
+ <div class="status" id="status">● DESLIGADO</div>
+</header>
 
-<h1>VISION AI</h1>
-<p class="subtitle">Sistema de visão computacional</p>
-
-<div class="camera">
-  <canvas id="screen"></canvas>
-</div>
-
-<div class="controls">
-  <button id="startButton" type="button">
-    ATIVAR CÂMERA
-  </button>
-
-  <button id="switchButton" type="button">
-    TROCAR CÂMERA
-  </button>
-
-  <button id="stopButton" type="button">
-    DESLIGAR CÂMERA
-  </button>
-</div>
-
-<div id="status">Sistema pronto. Ative a câmera.</div>
-
-<div class="panel">
-  <h3>IDENTIFICAÇÃO DE MÃOS</h3>
-  <div id="hands" class="result">
-    Aguardando câmera...
+<main>
+ <div class="camera">
+  <video id="video" playsinline muted></video>
+  <canvas id="canvas" width="640" height="480"></canvas>
+  <div class="placeholder" id="placeholder">
+   Câmera aguardando ativação
   </div>
-  <div class="small">
-    Detecta mãos, dedos e gestos básicos.
-  </div>
-</div>
+ </div>
 
-<div class="panel">
-  <h3>IDENTIFICAÇÃO FACIAL</h3>
-  <div id="faces" class="result">
-    Aguardando câmera...
-  </div>
-  <div class="small">
-    Detecta rostos e estima algumas expressões.
-  </div>
-</div>
+ <div class="controls">
+  <button id="start">INICIAR MONITORAMENTO</button>
+  <button id="stop">PARAR</button>
+ </div>
 
-<div class="panel">
-  <h3>SISTEMA DE INTELIGÊNCIA ARTIFICIAL</h3>
-  <div id="system" class="result">
-    Modelos ainda não carregados.
+ <div class="stats">
+  <div class="stat">
+   <small>PESSOAS DETECTADAS</small>
+   <strong id="count">0</strong>
   </div>
-</div>
+  <div class="stat">
+   <small>OCORRÊNCIAS</small>
+   <strong id="alerts">0</strong>
+  </div>
+ </div>
 
-<video
-  id="video"
-  autoplay
-  playsinline
-  muted
-  style="display:none">
-</video>
+ <div class="events">
+  <h3>HISTÓRICO DE EVENTOS</h3>
+  <div id="log">Sistema aguardando inicialização.</div>
+ </div>
+</main>
+
+<footer>SENTINELA AI • SISTEMA DE VISÃO COMPUTACIONAL</footer>
 
 <script>
-"use strict";
+const video=document.getElementById("video");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const start=document.getElementById("start");
+const stop=document.getElementById("stop");
+const status=document.getElementById("status");
+const placeholder=document.getElementById("placeholder");
+const count=document.getElementById("count");
+const alerts=document.getElementById("alerts");
+const log=document.getElementById("log");
 
-const video = document.getElementById("video");
-const canvas = document.getElementById("screen");
-const ctx = canvas.getContext("2d");
+let stream=null;
+let running=false;
+let detector=null;
+let lastDetection=0;
+let eventCount=0;
 
-const statusText = document.getElementById("status");
-const handsText = document.getElementById("hands");
-const facesText = document.getElementById("faces");
-const systemText = document.getElementById("system");
-
-const startButton = document.getElementById("startButton");
-const switchButton = document.getElementById("switchButton");
-const stopButton = document.getElementById("stopButton");
-
-const WASM_URL =
-"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
-
-const HAND_MODEL =
-"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task";
-
-const FACE_MODEL =
-"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task";
-
-let stream = null;
-let cameraMode = "user";
-let running = false;
-let starting = false;
-let animation = null;
-
-let handModel = null;
-let faceModel = null;
-
-let modelsLoading = false;
-let modelsLoaded = false;
-
-let handResults = null;
-let faceResults = null;
-let lastDetection = 0;
-
-let lastVideoTime = -1;
-
-startButton.addEventListener("click", startCamera);
-switchButton.addEventListener("click", switchCamera);
-stopButton.addEventListener("click", stopCamera);
-
-function setStatus(message) {
-  statusText.textContent = message;
+function event(text){
+ const time=new Date().toLocaleTimeString("pt-BR");
+ log.innerHTML=time+" — "+text+"<br>"+log.innerHTML;
 }
 
-function setSystem(message) {
-  systemText.textContent = message;
+async function loadDetector(){
+ if(detector)return detector;
+ if(!("BarcodeDetector" in window) && !("FaceDetector" in window)){
+   // O detector de pessoas será carregado pela biblioteca abaixo.
+ }
+ const vision=await import(
+ "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/+esm"
+ );
+ const tf=await import(
+ "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/+esm"
+ );
+ await tf.ready();
+ detector=await vision.load({base:"lite_mobilenet_v2"});
+ return detector;
 }
 
-async function startCamera() {
-  if (starting) return;
+function draw(){
+ if(!running)return;
+ if(video.readyState>=2){
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+ }
+ requestAnimationFrame(draw);
+}
 
-  if (running) {
-    setStatus("A câmera já está ligada.");
-    return;
-  }
-
-  starting = true;
-  startButton.disabled = true;
-  startButton.textContent = "INICIANDO...";
-
-  try {
-    setStatus("Solicitando acesso à câmera...");
-
-    if (!navigator.mediaDevices ||
-        !navigator.mediaDevices.getUserMedia) {
-      throw new Error(
-        "Câmera indisponível. Abra o site em HTTPS."
-      );
+async function detect(){
+ while(running){
+  if(detector && video.readyState>=2){
+   try{
+    const predictions=await detector.detect(video,10,0.45);
+    ctx.drawImage(video,0,0,canvas.width,canvas.height);
+    let people=0;
+    for(const p of predictions){
+     if(p.class!=="person")continue;
+     people++;
+     const [x,y,w,h]=p.bbox;
+     const sx=canvas.width/video.videoWidth;
+     const sy=canvas.height/video.videoHeight;
+     ctx.strokeStyle="#48e0ad";
+     ctx.lineWidth=3;
+     ctx.strokeRect(x*sx,y*sy,w*sx,h*sy);
+     ctx.fillStyle="#48e0ad";
+     ctx.fillRect(x*sx,y*sy,95,22);
+     ctx.fillStyle="#07130f";
+     ctx.font="bold 12px Arial";
+     ctx.fillText("PESSOA",x*sx+5,y*sy+15);
     }
-
-    const newStream =
-      await navigator.mediaDevices.getUserMedia({
-        audio: false,
-        video: {
-          facingMode: { ideal: cameraMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 }
-        }
-      });
-
-    stream = newStream;
-    video.srcObject = stream;
-
-    await video.play();
-
-    running = true;
-    lastVideoTime = -1;
-
-    setStatus(
-      cameraMode === "user"
-      ? "Câmera frontal ligada."
-      : "Câmera traseira ligada."
-    );
-
-    drawCamera();
-
-    if (!modelsLoaded && !modelsLoading) {
-      loadModels();
-    }
-
-  } catch (error) {
-    setStatus("Erro ao abrir câmera: " + error.message);
-    stopCamera();
-  } finally {
-    starting = false;
-    startButton.disabled = false;
-    startButton.textContent = "ATIVAR CÂMERA";
+    count.textContent=people;
+   }catch(e){}
   }
+  await new Promise(r=>setTimeout(r,350));
+ }
 }
 
-function stopCamera() {
-  running = false;
-
-  if (animation !== null) {
-    cancelAnimationFrame(animation);
-    animation = null;
-  }
-
-  if (stream) {
-    stream.getTracks().forEach(track => track.stop());
-    stream = null;
-  }
-
-  video.srcObject = null;
-
-  handResults = null;
-  faceResults = null;
-
-  handsText.textContent = "Câmera desligada.";
-  facesText.textContent = "Câmera desligada.";
-
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  setStatus("Câmera desligada.");
-  startButton.textContent = "ATIVAR CÂMERA";
-}
-
-async function switchCamera() {
-  cameraMode =
-    cameraMode === "user" ? "environment" : "user";
-
-  if (running) {
-    stopCamera();
-    await startCamera();
-  } else {
-    setStatus(
-      cameraMode === "user"
-      ? "Câmera frontal selecionada."
-      : "Câmera traseira selecionada."
-    );
-  }
-}
-
-async function loadModels() {
-  if (modelsLoaded || modelsLoading) return;
-
-  modelsLoading = true;
-
-  setSystem("Baixando modelos de inteligência artificial...");
-
-  try {
-    // A biblioteca é carregada somente agora.
-    // Uma falha aqui não impede os botões de funcionar.
-
-    const visionLibrary = await import(
-      "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm"
-    );
-
-    const vision =
-      await visionLibrary.FilesetResolver.forVisionTasks(
-        WASM_URL
-      );
-
-    setSystem("Carregando identificador de mãos...");
-
-    handModel =
-      await visionLibrary.HandLandmarker.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath: HAND_MODEL,
-            delegate: "CPU"
-          },
-          runningMode: "VIDEO",
-          numHands: 2
-        }
-      );
-
-    setSystem("Carregando identificador facial...");
-
-    faceModel =
-      await visionLibrary.FaceLandmarker.createFromOptions(
-        vision,
-        {
-          baseOptions: {
-            modelAssetPath: FACE_MODEL,
-            delegate: "CPU"
-          },
-          runningMode: "VIDEO",
-          numFaces: 5,
-          outputFaceBlendshapes: true
-        }
-      );
-
-    modelsLoaded = true;
-
-    setSystem(
-      "Mãos: ATIVO | Rostos: ATIVO"
-    );
-
-    setStatus("Câmera e inteligência artificial funcionando.");
-
-  } catch (error) {
-    console.error(error);
-
-    setSystem(
-      "Falha ao carregar IA: " + error.message
-    );
-
-    setStatus(
-      "Câmera funcionando. Verifique sua conexão para carregar a IA."
-    );
-
-  } finally {
-    modelsLoading = false;
-  }
-}
-
-function drawCamera() {
-  if (!running) return;
-
-  if (video.readyState >= 2) {
-    const width = video.videoWidth;
-    const height = video.videoHeight;
-
-    if (width && height) {
-      if (
-        canvas.width !== width ||
-        canvas.height !== height
-      ) {
-        canvas.width = width;
-        canvas.height = height;
-      }
-
-      ctx.clearRect(0, 0, width, height);
-
-      // Corrige a imagem da câmera frontal.
-      if (cameraMode === "user") {
-        ctx.save();
-        ctx.translate(width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(video, 0, 0, width, height);
-        ctx.restore();
-      } else {
-        ctx.drawImage(video, 0, 0, width, height);
-      }
-
-      const now = performance.now();
-
-      if (
-        modelsLoaded &&
-        now - lastDetection > 150 &&
-        video.currentTime !== lastVideoTime
-      ) {
-        lastDetection = now;
-        lastVideoTime = video.currentTime;
-
-        try {
-          handResults =
-            handModel.detectForVideo(canvas, now);
-
-          faceResults =
-            faceModel.detectForVideo(canvas, now);
-
-          updateHandInfo();
-          updateFaceInfo();
-
-        } catch (error) {
-          setSystem("Erro na análise: " + error.message);
-        }
-      }
-
-      drawHands();
-      drawFaces();
-    }
-  }
-
-  animation = requestAnimationFrame(drawCamera);
-}
-
-const connections = [
-  [0,1],[1,2],[2,3],[3,4],
-  [0,5],[5,6],[6,7],[7,8],
-  [5,9],[9,10],[10,11],[11,12],
-  [9,13],[13,14],[14,15],[15,16],
-  [13,17],[17,18],[18,19],[19,20],
-  [0,17]
-];
-
-function drawHands() {
-  if (!handResults || !handResults.landmarks) return;
-
-  const width = canvas.width;
-  const height = canvas.height;
-
-  handResults.landmarks.forEach((points, index) => {
-
-    ctx.lineWidth = 4;
-    ctx.strokeStyle = "#00e5ff";
-
-    connections.forEach(([a,b]) => {
-      ctx.beginPath();
-      ctx.moveTo(
-        points[a].x * width,
-        points[a].y * height
-      );
-      ctx.lineTo(
-        points[b].x * width,
-        points[b].y * height
-      );
-      ctx.stroke();
-    });
-
-    points.forEach(point => {
-      ctx.beginPath();
-      ctx.arc(
-        point.x * width,
-        point.y * height,
-        5,
-        0,
-        Math.PI * 2
-      );
-      ctx.fillStyle = "#ffcc00";
-      ctx.fill();
-    });
-
-    ctx.fillStyle = "#00e5ff";
-    ctx.font = "bold 22px Arial";
-
-    ctx.fillText(
-      "MÃO " + (index + 1),
-      points[0].x * width + 10,
-      points[0].y * height - 15
-    );
+start.addEventListener("click",async()=>{
+ if(running)return;
+ try{
+  status.textContent="● INICIANDO";
+  stream=await navigator.mediaDevices.getUserMedia({
+   audio:false,
+   video:{
+    facingMode:"environment",
+    width:{ideal:640},
+    height:{ideal:480}
+   }
   });
-}
-
-function countFingers(points) {
-  let count = 0;
-
-  const fingers = [
-    [8,6],
-    [12,10],
-    [16,14],
-    [20,18]
-  ];
-
-  fingers.forEach(([tip,pip]) => {
-    if (points[tip].y < points[pip].y) {
-      count++;
-    }
-  });
-
-  const distance = (a,b) =>
-    Math.hypot(a.x-b.x, a.y-b.y);
-
-  if (
-    distance(points[4], points[5]) >
-    distance(points[3], points[5]) * 1.15
-  ) {
-    count++;
+  video.srcObject=stream;
+  await video.play();
+  canvas.width=640;
+  canvas.height=480;
+  running=true;
+  placeholder.style.display="none";
+  status.textContent="● CÂMERA ATIVA";
+  event("Câmera iniciada.");
+  requestAnimationFrame(draw);
+  event("Carregando inteligência artificial...");
+  await loadDetector();
+  if(running){
+   status.textContent="● IA ATIVA";
+   event("Detector de pessoas pronto.");
+   detect();
   }
+ }catch(e){
+  status.textContent="● ERRO";
+  event("Não foi possível iniciar: "+e.message);
+  running=false;
+ }
+});
 
-  return count;
-}
+stop.addEventListener("click",()=>{
+ running=false;
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+ stream=null;
+ video.srcObject=null;
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ placeholder.style.display="grid";
+ status.textContent="● DESLIGADO";
+ count.textContent="0";
+ event("Monitoramento encerrado.");
+});
 
-function updateHandInfo() {
-  const detected = handResults?.landmarks || [];
-
-  if (detected.length === 0) {
-    handsText.textContent = "Nenhuma mão identificada.";
-    return;
-  }
-
-  handsText.innerHTML = "";
-
-  detected.forEach((points,index) => {
-    const fingers = countFingers(points);
-
-    let gesture;
-
-    if (fingers === 0) {
-      gesture = "Mão fechada (estimativa)";
-    } else if (fingers === 5) {
-      gesture = "Mão aberta (estimativa)";
-    } else {
-      gesture = fingers + " dedos";
-    }
-
-    const line = document.createElement("div");
-
-    line.textContent =
-      "Mão " + (index + 1) + ": " + gesture;
-
-    handsText.appendChild(line);
-  });
-}
-
-function drawFaces() {
-  if (!faceResults || !faceResults.faceLandmarks) return;
-
-  const width = canvas.width;
-  const height = canvas.height;
-
-  faceResults.faceLandmarks.forEach((points,index) => {
-
-    let minX = 1;
-    let minY = 1;
-    let maxX = 0;
-    let maxY = 0;
-
-    points.forEach(point => {
-      minX = Math.min(minX, point.x);
-      minY = Math.min(minY, point.y);
-      maxX = Math.max(maxX, point.x);
-      maxY = Math.max(maxY, point.y);
-    });
-
-    ctx.strokeStyle = "#00ff88";
-    ctx.lineWidth = 3;
-
-    ctx.strokeRect(
-      minX * width,
-      minY * height,
-      (maxX - minX) * width,
-      (maxY - minY) * height
-    );
-
-    ctx.fillStyle = "#00ff88";
-    ctx.font = "bold 22px Arial";
-
-    ctx.fillText(
-      "ROSTO " + (index + 1),
-      minX * width,
-      minY * height - 10
-    );
-  });
-}
-
-function updateFaceInfo() {
-  const detected = faceResults?.faceLandmarks || [];
-
-  if (detected.length === 0) {
-    facesText.textContent = "Nenhum rosto identificado.";
-    return;
-  }
-
-  facesText.innerHTML = "";
-
-  detected.forEach((points,index) => {
-
-    let expression = "Rosto detectado";
-
-    const categories =
-      faceResults.faceBlendshapes?.[index]?.categories || [];
-
-    const score = name => {
-      const item = categories.find(
-        item => item.categoryName === name
-      );
-
-      return item ? item.score : 0;
-    };
-
-    const smile =
-      score("mouthSmileLeft") +
-      score("mouthSmileRight");
-
-    const openMouth = score("jawOpen");
-
-    if (smile > 0.8) {
-      expression = "Possível sorriso";
-    } else if (openMouth > 0.45) {
-      expression = "Boca aberta";
-    }
-
-    const line = document.createElement("div");
-
-    line.textContent =
-      "Rosto " + (index + 1) + ": " + expression;
-
-    facesText.appendChild(line);
-  });
-}
-
-window.addEventListener("beforeunload", stopCamera);
-
+window.addEventListener("pagehide",()=>{
+ if(stream)stream.getTracks().forEach(t=>t.stop());
+});
 </script>
-
 </body>
 </html>
