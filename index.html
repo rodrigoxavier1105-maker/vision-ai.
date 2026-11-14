@@ -15,15 +15,8 @@ main{max-width:750px;margin:45px auto}
 h1{font-size:32px}
 p{color:#929ba8}
 .screen{position:relative;background:#111923;border:1px solid #263342;border-radius:16px;overflow:hidden;margin-top:25px}
-video{width:100%;display:block}
-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
-
-/* Espelhamento somente na câmera frontal */
-video.front-camera,
-canvas.front-camera{
-transform:scaleX(-1);
-}
-
+video{width:100%;display:block;transform:none}
+canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:none}
 .controls{display:flex;gap:10px;margin-top:15px}
 button{flex:1;padding:16px 8px;border:0;border-radius:10px;font-weight:bold;font-size:13px}
 #start{background:#00e5a0;color:#00150e}
@@ -75,14 +68,11 @@ height:{ideal:480}
 });
 
 video.srcObject=stream;
-
-/* Aplica o espelhamento apenas na câmera frontal */
-video.classList.toggle("front-camera",facing==="user");
-canvas.classList.toggle("front-camera",facing==="user");
+video.style.transform="none";
+canvas.style.transform="none";
 
 await video.play();
 status.textContent="Câmera funcionando. IA aguardando.";
-
 }catch(e){
 status.textContent="Erro da câmera: "+e.name+" - "+e.message;
 }
@@ -96,13 +86,7 @@ ctx.clearRect(0,0,canvas.width,canvas.height);
 const all=results.multiHandLandmarks||[];
 
 all.forEach(hand=>{
-const links=[
-[0,1],[1,2],[2,3],[3,4],
-[0,5],[5,6],[6,7],[7,8],
-[5,9],[9,10],[10,11],[11,12],
-[9,13],[13,14],[14,15],[15,16],
-[13,17],[17,18],[18,19],[19,20],[0,17]
-];
+const links=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
 ctx.strokeStyle="#00e5a0";
 ctx.lineWidth=4;
@@ -116,37 +100,27 @@ ctx.stroke();
 
 hand.forEach(p=>{
 ctx.beginPath();
-ctx.arc(
-p.x*canvas.width,
-p.y*canvas.height,
-5,0,Math.PI*2
-);
+ctx.arc(p.x*canvas.width,p.y*canvas.height,5,0,Math.PI*2);
 ctx.fillStyle="white";
 ctx.fill();
 });
 });
 
-status.textContent=all.length
-?"Mãos detectadas: "+all.length
-:"IA ativa. Procurando mãos...";
+status.textContent=all.length?"Mãos detectadas: "+all.length:"IA ativa. Procurando mãos...";
 }
 
 async function startAI(){
 if(aiActive)return;
 
 try{
-if(!video.srcObject){
-await openCamera();
-}
-
+if(!video.srcObject)await openCamera();
 if(!video.srcObject)return;
 
 status.textContent="Carregando inteligência artificial...";
 
 if(!ai){
 ai=new Hands({
-locateFile:file=>
-"https://cdn.jsdelivr.net/npm/@mediapipe/hands/"+file
+locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/hands/"+file
 });
 
 ai.setOptions({
@@ -174,14 +148,12 @@ if(!aiActive)return;
 
 if(video.readyState>=2&&!busy){
 busy=true;
-
 try{
 await ai.send({image:video});
 }catch(e){
 status.textContent="Erro de processamento: "+e.message;
 aiActive=false;
 }
-
 busy=false;
 }
 
@@ -193,7 +165,6 @@ document.getElementById("start").onclick=startAI;
 document.getElementById("switch").onclick=async()=>{
 aiActive=false;
 facing=facing==="environment"?"user":"environment";
-
 await openCamera();
 
 if(ai){
