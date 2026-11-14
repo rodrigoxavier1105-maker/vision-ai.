@@ -4,429 +4,400 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0a0c10">
-<title>SENTINELA OSINT</title>
-
+<title>SENTINELA REMOTE LAB</title>
 <style>
+:root{
+ --bg:#090909;
+ --panel:#111010;
+ --panel2:#181313;
+ --border:#302020;
+ --red:#ed303b;
+ --red2:#a31320;
+ --text:#f4eeee;
+ --muted:#938585;
+ --green:#4ac69b;
+}
 *{box-sizing:border-box}
-
 body{
- margin:0;
- background:#090c11;
- color:#eee;
+ margin:0;background:var(--bg);color:var(--text);
  font-family:Arial,sans-serif;
- padding:20px 15px;
 }
-
-main{max-width:560px;margin:auto}
-
 header{
- display:flex;
- align-items:center;
- gap:12px;
- margin:12px 0 45px;
+ height:72px;padding:0 22px;
+ display:flex;align-items:center;justify-content:space-between;
+ border-bottom:1px solid var(--border);
+ background:#0d0a0a;
+ position:sticky;top:0;z-index:5;
 }
-
+.brand{display:flex;align-items:center;gap:12px}
 .logo{
- width:46px;
- height:46px;
- border:1px solid #b99b63;
- border-radius:50%;
- display:grid;
- place-items:center;
- color:#c9aa70;
- font-size:26px;
+ width:40px;height:40px;border-radius:11px;
+ display:grid;place-items:center;
+ background:#290e12;border:1px solid var(--red);
+ color:var(--red);font-size:24px;
+ box-shadow:0 0 18px #ed303b22;
 }
-
-.brand{
- font-size:19px;
- letter-spacing:4px;
- font-weight:bold;
+.brand h1{font-size:16px;letter-spacing:3px;margin:0}
+.brand small{color:var(--muted);font-size:9px;letter-spacing:2px}
+.connection{
+ font-size:11px;color:#ff777e;
+ border:1px solid #65232a;padding:8px 11px;
+ border-radius:20px;background:#210d10;
 }
-
-.sub{
- font-size:9px;
- color:#777;
- letter-spacing:2px;
- margin-top:5px;
+main{max-width:1200px;margin:auto;padding:22px}
+.top{
+ display:flex;justify-content:space-between;
+ align-items:center;gap:12px;margin-bottom:22px;
 }
-
-.online{
- margin-left:auto;
- color:#8eaa8e;
- font-size:10px;
+h2{font-size:21px;margin:0 0 6px}
+.sub{color:var(--muted);font-size:12px}
+button{
+ border:1px solid var(--border);background:var(--panel2);
+ color:var(--text);padding:11px 14px;border-radius:8px;
+ cursor:pointer;font-size:12px;
 }
-
-h1{
- text-align:center;
- font-size:27px;
- margin:0 0 10px;
+button:hover{border-color:var(--red)}
+button.primary{
+ background:var(--red2);border-color:var(--red);
 }
-
-.description{
- text-align:center;
- color:#858991;
- font-size:13px;
- line-height:1.6;
- margin-bottom:28px;
+button.stop{color:#ff737b;border-color:#78252c}
+button:disabled{opacity:.4;cursor:not-allowed}
+nav{
+ display:flex;gap:8px;overflow-x:auto;
+ border-bottom:1px solid var(--border);
+ margin-bottom:20px;padding-bottom:12px;
 }
-
-.panel{
- background:#141820;
- border:1px solid #303640;
- border-radius:13px;
- padding:17px;
- margin-bottom:14px;
+nav button{white-space:nowrap}
+nav button.active{
+ background:#341015;border-color:var(--red);color:#ff858b;
 }
-
+.page{display:none}
+.page.active{display:block}
+.grid{
+ display:grid;grid-template-columns:repeat(3,1fr);gap:13px;
+}
+.card{
+ background:var(--panel);border:1px solid var(--border);
+ border-radius:12px;padding:17px;
+}
+.metric-title{font-size:10px;color:var(--muted);letter-spacing:1.5px}
+.metric{font-size:24px;font-weight:bold;margin-top:10px}
+.red{color:var(--red)}
+.green{color:var(--green)}
 .section-title{
- color:#c5a66e;
- font-size:11px;
- letter-spacing:2px;
- margin-bottom:16px;
+ display:flex;justify-content:space-between;
+ align-items:center;margin:24px 0 12px;
 }
-
-.field{margin-bottom:17px}
-
-label{
- display:block;
- color:#aeb3bd;
- font-size:11px;
- margin-bottom:8px;
+.section-title strong{font-size:14px}
+.viewer-grid{
+ display:grid;grid-template-columns:1fr 1fr;gap:14px;
 }
-
+.viewer{
+ background:#080808;border:1px solid #422126;
+ border-radius:12px;overflow:hidden;
+}
+.viewer-head{
+ padding:13px 15px;background:#171010;
+ display:flex;justify-content:space-between;align-items:center;
+ border-bottom:1px solid var(--border);
+}
+.viewer-head strong{font-size:12px}
+.viewer-head span{font-size:10px;color:var(--muted)}
+.screen{
+ min-height:235px;display:flex;flex-direction:column;
+ align-items:center;justify-content:center;gap:12px;
+ background:radial-gradient(ellipse,#251014,#090909 75%);
+}
+.screen-icon{
+ width:55px;height:55px;border:1px solid #733039;
+ border-radius:15px;display:grid;place-items:center;
+ color:var(--red);font-size:25px;
+}
+.screen p{font-size:11px;color:var(--muted);margin:0}
+.viewer-foot{
+ padding:12px;display:flex;gap:8px;flex-wrap:wrap;
+ border-top:1px solid var(--border);
+}
+.viewer-foot button{flex:1}
+.device{
+ display:flex;align-items:center;gap:13px;
+}
+.device-icon{
+ width:48px;height:48px;border-radius:12px;
+ background:#260f13;border:1px solid #69252c;
+ display:grid;place-items:center;font-size:23px;color:var(--red);
+}
+.device-name{font-weight:bold;font-size:14px}
+.device-info{font-size:11px;color:var(--muted);margin-top:5px}
+.tag{
+ background:#251014;color:#ff7d84;
+ border:1px solid #60242b;border-radius:5px;
+ font-size:9px;padding:5px 8px;
+}
+.row{
+ display:flex;align-items:center;justify-content:space-between;
+ gap:12px;padding:13px 0;border-bottom:1px solid var(--border);
+}
+.row:last-child{border:0}
+.row span{font-size:12px}
+.row small{display:block;color:var(--muted);margin-top:5px}
 input{
- width:100%;
- padding:15px;
- background:#0a0e14;
- border:1px solid #343b46;
- border-radius:8px;
- color:white;
- font-size:14px;
+ width:100%;background:#090909;color:white;
+ border:1px solid var(--border);padding:12px;
+ border-radius:8px;margin:8px 0 14px;
  outline:none;
 }
-
-input:focus{border-color:#b99b63}
-
-.hint{
- color:#707681;
- font-size:10px;
- margin-top:6px;
- line-height:1.5;
-}
-
-button{
- width:100%;
- padding:16px;
- border:0;
- border-radius:8px;
- background:#c4a66e;
- color:#17140e;
- font-weight:bold;
- letter-spacing:1px;
- cursor:pointer;
-}
-
-button:active{opacity:.8}
-
-#report{display:none;margin-top:25px}
-
-.report-head{
- display:flex;
- justify-content:space-between;
- align-items:center;
- margin-bottom:15px;
-}
-
-.result{
- background:#141820;
- border:1px solid #303640;
- border-radius:10px;
- padding:15px;
- margin-bottom:10px;
-}
-
-.result strong{
- display:block;
- font-size:13px;
- margin-bottom:8px;
-}
-
-.result p{
- color:#9298a2;
- font-size:12px;
- line-height:1.6;
- margin:0;
-}
-
-.tag{
- display:inline-block;
- font-size:10px;
- color:#d4b77f;
- border:1px solid #655638;
- padding:5px 8px;
- border-radius:5px;
- margin-bottom:10px;
-}
-
+input:focus{border-color:var(--red)}
+label{font-size:11px;color:var(--muted)}
+.logs{font-size:11px;color:var(--muted)}
+.log-item{padding:12px 0;border-bottom:1px solid var(--border)}
+.log-item b{color:#e7dada}
 .notice{
- color:#777f89;
- font-size:11px;
- line-height:1.7;
- margin:22px 0;
+ background:#211012;border:1px solid #59252b;
+ border-radius:9px;padding:13px;
+ color:#d9a3a5;font-size:11px;line-height:1.6;
+ margin-top:15px;
 }
-
-footer{
- text-align:center;
- color:#505762;
- font-size:9px;
- letter-spacing:2px;
- margin:35px 0 15px;
+.empty{text-align:center;padding:20px;color:var(--muted);font-size:11px}
+footer{text-align:center;color:#665959;font-size:10px;padding:25px}
+@media(max-width:700px){
+ main{padding:15px}
+ .grid{grid-template-columns:1fr 1fr}
+ .viewer-grid{grid-template-columns:1fr}
+ header{padding:0 14px}
+ .top{align-items:flex-start}
 }
 </style>
 </head>
-
 <body>
-<main>
 
 <header>
- <div class="logo">⌕</div>
- <div>
-  <div class="brand">SENTINELA</div>
-  <div class="sub">OPEN SOURCE INTELLIGENCE</div>
+ <div class="brand">
+  <div class="logo">◉</div>
+  <div>
+   <h1>SENTINELA</h1>
+   <small>REMOTE LAB · CONTROL CENTER</small>
+  </div>
  </div>
- <div class="online">● ONLINE</div>
+ <div class="connection" id="headerStatus">● OFFLINE</div>
 </header>
 
-<h1>Investigação digital</h1>
+<main>
+ <div class="top">
+  <div>
+   <h2>Central de controle</h2>
+   <div class="sub">Monitoramento remoto de dispositivo autorizado</div>
+  </div>
+  <button class="primary" onclick="connect()">+ Conectar</button>
+ </div>
 
-<div class="description">
-Central de análise de identificadores e informações públicas.
-</div>
+ <nav>
+  <button class="active" onclick="page('home',this)">Visão geral</button>
+  <button onclick="page('device',this)">Dispositivo</button>
+  <button onclick="page('sessions',this)">Sessões</button>
+  <button onclick="page('settings',this)">Configurações</button>
+ </nav>
 
-<section class="panel">
+ <section class="page active" id="home">
+  <div class="grid">
+   <div class="card">
+    <div class="metric-title">ESTADO DA CONEXÃO</div>
+    <div class="metric red" id="metricConnection">Offline</div>
+   </div>
+   <div class="card">
+    <div class="metric-title">DISPOSITIVO</div>
+    <div class="metric">Xiaomi</div>
+   </div>
+   <div class="card">
+    <div class="metric-title">SESSÕES REGISTRADAS</div>
+    <div class="metric" id="metricSessions">0</div>
+   </div>
+  </div>
 
-<div class="section-title">01 — IDENTIDADE DIGITAL</div>
+  <div class="section-title">
+   <strong>Transmissões do dispositivo</strong>
+   <span class="tag">ACESSO AUTORIZADO</span>
+  </div>
 
-<div class="field">
-<label for="username">USERNAME</label>
-<input id="username" placeholder="@usuario">
-<div class="hint">Identificador público de plataformas digitais.</div>
-</div>
+  <div class="viewer-grid">
+   <div class="viewer">
+    <div class="viewer-head">
+     <strong>◫ TELA DO ANDROID</strong>
+     <span id="screenStatus">AGUARDANDO</span>
+    </div>
+    <div class="screen">
+     <div class="screen-icon">▣</div>
+     <strong style="font-size:12px">Espelhamento de tela</strong>
+     <p>Aguardando aplicativo Android</p>
+    </div>
+    <div class="viewer-foot">
+     <button onclick="request('screen')">Solicitar compartilhamento</button>
+    </div>
+   </div>
 
-<div class="field">
-<label for="name">NOME PÚBLICO</label>
-<input id="name" placeholder="Nome e sobrenome">
-<div class="hint">Nome divulgado publicamente ou fornecido para análise.</div>
-</div>
+   <div class="viewer">
+    <div class="viewer-head">
+     <strong>◎ CÂMERA AO VIVO</strong>
+     <span id="cameraStatus">AGUARDANDO</span>
+    </div>
+    <div class="screen">
+     <div class="screen-icon">◉</div>
+     <strong style="font-size:12px">Transmissão da câmera</strong>
+     <p>Aguardando autorização no Android</p>
+    </div>
+    <div class="viewer-foot">
+     <button onclick="request('camera')">Solicitar câmera</button>
+    </div>
+   </div>
+  </div>
 
-</section>
+  <div class="section-title"><strong>Dispositivo conectado</strong></div>
+  <div class="card">
+   <div class="device">
+    <div class="device-icon">▯</div>
+    <div style="flex:1">
+     <div class="device-name">Meu Xiaomi</div>
+     <div class="device-info">Android · Dispositivo de laboratório</div>
+    </div>
+    <span class="tag" id="deviceStatus">DESCONECTADO</span>
+   </div>
+   <div class="notice">
+    Este painel ainda não possui comunicação com o aplicativo Android.
+    As solicitações abaixo são registros locais, não comandos enviados
+    ao dispositivo.
+   </div>
+  </div>
+ </section>
 
-<section class="panel">
+ <section class="page" id="device">
+  <h2>Gerenciamento do dispositivo</h2>
+  <p class="sub">Configuração do aparelho de laboratório.</p>
+  <div class="card">
+   <div class="device">
+    <div class="device-icon">▯</div>
+    <div>
+     <div class="device-name">Xiaomi Android</div>
+     <div class="device-info">Dispositivo principal</div>
+    </div>
+   </div>
+   <div class="row">
+    <span>Compartilhamento de tela</span>
+    <span class="tag">NÃO INICIADO</span>
+   </div>
+   <div class="row">
+    <span>Câmera frontal e traseira</span>
+    <span class="tag">NÃO INICIADA</span>
+   </div>
+   <div class="row">
+    <span>Permissão de acessibilidade</span>
+    <span class="tag">PENDENTE</span>
+   </div>
+   <div class="row">
+    <span>Conexão criptografada</span>
+    <span class="tag">NÃO CONFIGURADA</span>
+   </div>
+  </div>
+ </section>
 
-<div class="section-title">02 — CONTATO PROFISSIONAL</div>
+ <section class="page" id="sessions">
+  <h2>Histórico de sessões</h2>
+  <p class="sub">Registro das ações realizadas neste painel.</p>
+  <div class="card">
+   <div id="logs" class="logs">
+    <div class="empty">Nenhuma atividade registrada.</div>
+   </div>
+   <button class="stop" onclick="clearLogs()">Limpar histórico local</button>
+  </div>
+ </section>
 
-<div class="field">
-<label for="phone">TELEFONE PUBLICADO</label>
-<input id="phone" type="tel" placeholder="(00) 00000-0000">
-<div class="hint">Somente contato profissional ou comercial divulgado publicamente.</div>
-</div>
-
-</section>
-
-<section class="panel">
-
-<div class="section-title">03 — VEHICLE INTELLIGENCE</div>
-
-<div class="field">
-<label for="plate">PLACA DO VEÍCULO</label>
-<input id="plate" placeholder="ABC1D23" maxlength="7">
-<div class="hint">Identificação do formato brasileiro antigo ou Mercosul.</div>
-</div>
-
-</section>
-
-<button id="analyze">ANALISAR IDENTIFICADORES</button>
-
-<section id="report">
-
-<div class="report-head">
- <div class="section-title">RELATÓRIO DE ANÁLISE</div>
- <span class="tag">ANÁLISE LOCAL</span>
-</div>
-
-<div id="results"></div>
-
-</section>
-
-<div class="notice">
-<strong>PRIVACIDADE E TRANSPARÊNCIA</strong><br>
-O SENTINELA não consulta CPF de terceiros, proprietários de veículos,
-endereços privados, senhas ou sessões de contas. Não considera
-uma semelhança de nomes ou usernames como prova de identidade.
-As verificações desta versão são locais e não representam uma
-investigação automatizada na internet.
-</div>
-
-<footer>
-SENTINELA OSINT — INTELLIGENCE SYSTEM
-</footer>
-
+ <section class="page" id="settings">
+  <h2>Configurações</h2>
+  <p class="sub">Identificação e segurança do laboratório.</p>
+  <div class="card">
+   <label>Nome do dispositivo</label>
+   <input id="deviceName" value="Meu Xiaomi">
+   <label>ID do dispositivo (será fornecido pelo aplicativo)</label>
+   <input id="deviceId" placeholder="ID de conexão">
+   <label>Endereço do servidor seguro</label>
+   <input id="server" placeholder="Servidor WebSocket seguro">
+   <button class="primary" onclick="saveSettings()">Salvar configurações</button>
+  </div>
+  <div class="notice">
+   Não coloque senhas, tokens secretos ou chaves privadas neste painel.
+   A autenticação real será implementada no servidor.
+  </div>
+ </section>
 </main>
 
+<footer>
+ SENTINELA REMOTE LAB · INTERFACE 1.0 · SISTEMA DE LABORATÓRIO
+</footer>
+
 <script>
-const $ = id => document.getElementById(id);
+let connected = false;
+let sessions = 0;
+let history = [];
 
-function addResult(title,status,description){
- const div=document.createElement("div");
- div.className="result";
-
- const strong=document.createElement("strong");
- strong.textContent=title;
-
- const tag=document.createElement("span");
- tag.className="tag";
- tag.textContent=status;
-
- const p=document.createElement("p");
- p.textContent=description;
-
- div.append(strong,tag,p);
- $("results").appendChild(div);
+function page(id,btn){
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById(id).classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ btn.classList.add('active');
 }
 
-function validateUsername(value){
- value=value.trim().replace(/^@/,"");
-
- if(!value)return null;
-
- return /^[a-zA-Z0-9._]{1,30}$/.test(value)
- ? value : false;
-}
-
-function validatePlate(value){
- value=value.toUpperCase().replace(/[^A-Z0-9]/g,"");
-
- if(/^[A-Z]{3}[0-9]{4}$/.test(value)){
-  return "Padrão antigo brasileiro";
- }
-
- if(/^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(value)){
-  return "Padrão Mercosul";
- }
-
- return false;
-}
-
-function validatePhone(value){
- const digits=value.replace(/\D/g,"");
-
- if(!digits)return null;
-
- if(digits.length===10 || digits.length===11){
-  return "Formato compatível com telefone brasileiro";
- }
-
- if(digits.length>=12 && digits.length<=13 && digits.startsWith("55")){
-  return "Formato compatível com telefone brasileiro com DDI";
- }
-
- return false;
-}
-
-function analyze(){
-
- const username=$("username").value;
- const name=$("name").value.trim();
- const phone=$("phone").value;
- const plate=$("plate").value;
-
- const userResult=validateUsername(username);
- const phoneResult=validatePhone(phone);
- const plateResult=validatePlate(plate);
-
- $("results").innerHTML="";
-
- let count=0;
-
- if(username.trim()){
-  count++;
-
-  if(userResult){
-   addResult(
-    "Username",
-    "FORMATO VÁLIDO",
-    "@"+userResult+" foi validado localmente. A existência e a titularidade dos perfis ainda precisam ser verificadas em fontes públicas."
-   );
-  }else{
-   addResult(
-    "Username",
-    "FORMATO INVÁLIDO",
-    "Confira o identificador informado."
-   );
-  }
- }
-
- if(name){
-  count++;
-
-  addResult(
-   "Nome público",
-   "INFORMADO",
-   "Nome recebido para análise: "+name+". Nenhuma identidade foi confirmada."
-  );
- }
-
- if(phone.trim()){
-  count++;
-
-  addResult(
-   "Telefone",
-   phoneResult || "FORMATO INVÁLIDO",
-   phoneResult || "Confira a quantidade de dígitos do telefone."
-  );
- }
-
- if(plate.trim()){
-  count++;
-
-  addResult(
-   "Placa veicular",
-   plateResult || "FORMATO INVÁLIDO",
-   plateResult
-    ? "Placa compatível com "+plateResult+". A validação não identifica o proprietário nem confirma a situação do veículo."
-    : "Não corresponde aos padrões brasileiros reconhecidos nesta validação."
-  );
- }
-
- if(count===0){
-  alert("Informe pelo menos um identificador.");
-  return;
- }
-
- addResult(
-  "Estado da investigação",
-  "ANÁLISE LOCAL",
-  "Esta versão valida formatos e organiza os dados informados. Não realizou buscas externas nem confirmou correspondências."
- );
-
- $("report").style.display="block";
-
- $("report").scrollIntoView({
-  behavior:"smooth",
-  block:"start"
+function log(message){
+ history.unshift({
+  message,
+  time:new Date().toLocaleString('pt-BR')
  });
+ renderLogs();
 }
 
-$("analyze").addEventListener("click",analyze);
+function connect(){
+ log('Solicitação de conexão iniciada.');
+ alert('Painel preparado. Para conectar de verdade, precisamos integrar o aplicativo Android e o servidor.');
+}
 
-$("plate").addEventListener("input",e=>{
- e.target.value=e.target.value
- .toUpperCase()
- .replace(/[^A-Z0-9]/g,"")
- .slice(0,7);
-});
+function request(type){
+ if(type==='screen'){
+  log('Solicitação de compartilhamento de tela.');
+  alert('Aguardando integração com o aplicativo Android.');
+ }
+ if(type==='camera'){
+  log('Solicitação de acesso autorizado à câmera.');
+  alert('A câmera só poderá transmitir após autorização explícita no Android.');
+ }
+}
+
+function saveSettings(){
+ const name=document.getElementById('deviceName').value.trim();
+ if(!name)return alert('Informe o nome do dispositivo.');
+ log('Configurações locais atualizadas.');
+ alert('Configurações da interface salvas nesta sessão.');
+}
+
+function renderLogs(){
+ document.getElementById('logs').innerHTML=history.length?
+ history.map(x=>`
+ <div class="log-item">
+  <b>${escapeHTML(x.message)}</b>
+  <div style="margin-top:5px">${x.time}</div>
+ </div>`).join(''):
+ '<div class="empty">Nenhuma atividade registrada.</div>';
+}
+
+function clearLogs(){
+ if(!confirm('Limpar histórico desta sessão?'))return;
+ history=[];
+ renderLogs();
+}
+
+function escapeHTML(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+ }[c]));
+}
 </script>
-
 </body>
-</html>
+ </html>
+ 
