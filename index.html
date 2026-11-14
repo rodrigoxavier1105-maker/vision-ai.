@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0b0d11">
+<meta name="theme-color" content="#0a0c10">
 <title>SENTINELA OSINT</title>
 
 <style>
@@ -12,107 +12,115 @@
 
 body{
  margin:0;
- min-height:100vh;
- background:#0b0d11;
- color:#eeeae1;
+ background:#090c11;
+ color:#eee;
  font-family:Arial,sans-serif;
- padding:24px 16px;
+ padding:20px 15px;
 }
 
-.container{
- max-width:520px;
- margin:auto;
-}
+main{max-width:560px;margin:auto}
 
 header{
  display:flex;
  align-items:center;
  gap:12px;
- margin:18px 0 55px;
+ margin:12px 0 45px;
 }
 
 .logo{
- width:45px;
- height:45px;
- border:1px solid #9b8050;
+ width:46px;
+ height:46px;
+ border:1px solid #b99b63;
  border-radius:50%;
  display:grid;
  place-items:center;
- color:#d2b77d;
- font-size:23px;
+ color:#c9aa70;
+ font-size:26px;
 }
-
-.logo svg{width:27px;height:27px}
 
 .brand{
  font-size:19px;
- letter-spacing:3px;
+ letter-spacing:4px;
  font-weight:bold;
 }
 
-.subtitle{
- color:#777b83;
- font-size:10px;
+.sub{
+ font-size:9px;
+ color:#777;
  letter-spacing:2px;
  margin-top:5px;
 }
 
-.status{
+.online{
  margin-left:auto;
- color:#8caa8e;
+ color:#8eaa8e;
  font-size:10px;
 }
 
-.intro{text-align:center;margin-bottom:30px}
-
-.intro h1{
+h1{
+ text-align:center;
  font-size:27px;
- letter-spacing:1px;
- margin:0 0 12px;
+ margin:0 0 10px;
 }
 
-.intro p{
+.description{
+ text-align:center;
  color:#858991;
  font-size:13px;
- line-height:1.7;
- margin:0;
+ line-height:1.6;
+ margin-bottom:28px;
 }
 
-.searchbox{
- background:#14171d;
- border:1px solid #343943;
+.panel{
+ background:#141820;
+ border:1px solid #303640;
  border-radius:13px;
  padding:17px;
+ margin-bottom:14px;
 }
 
-.label{
- display:block;
- color:#bba477;
- font-size:10px;
+.section-title{
+ color:#c5a66e;
+ font-size:11px;
  letter-spacing:2px;
- margin-bottom:12px;
+ margin-bottom:16px;
+}
+
+.field{margin-bottom:17px}
+
+label{
+ display:block;
+ color:#aeb3bd;
+ font-size:11px;
+ margin-bottom:8px;
 }
 
 input{
  width:100%;
- background:#0c0f14;
- border:1px solid #303641;
- border-radius:9px;
- padding:16px;
+ padding:15px;
+ background:#0a0e14;
+ border:1px solid #343b46;
+ border-radius:8px;
  color:white;
- font-size:15px;
+ font-size:14px;
  outline:none;
 }
 
-input:focus{border-color:#b99b62}
+input:focus{border-color:#b99b63}
+
+.hint{
+ color:#707681;
+ font-size:10px;
+ margin-top:6px;
+ line-height:1.5;
+}
 
 button{
  width:100%;
- margin-top:12px;
  padding:16px;
  border:0;
- border-radius:9px;
- background:#c2a66d;
+ border-radius:8px;
+ background:#c4a66e;
  color:#17140e;
  font-weight:bold;
  letter-spacing:1px;
@@ -121,222 +129,302 @@ button{
 
 button:active{opacity:.8}
 
-#results{display:none;margin-top:25px}
+#report{display:none;margin-top:25px}
 
-.section-title{
- font-size:11px;
- color:#bba477;
- letter-spacing:2px;
- margin-bottom:13px;
+.report-head{
+ display:flex;
+ justify-content:space-between;
+ align-items:center;
+ margin-bottom:15px;
 }
 
 .result{
- display:block;
- background:#14171d;
- border:1px solid #292e37;
- border-radius:11px;
- padding:16px;
+ background:#141820;
+ border:1px solid #303640;
+ border-radius:10px;
+ padding:15px;
  margin-bottom:10px;
- text-decoration:none;
- color:#eeeae1;
 }
 
 .result strong{
  display:block;
- font-size:14px;
- margin-bottom:7px;
+ font-size:13px;
+ margin-bottom:8px;
 }
 
-.result span{
- color:#858991;
+.result p{
+ color:#9298a2;
  font-size:12px;
- line-height:1.5;
+ line-height:1.6;
+ margin:0;
 }
 
-.result .arrow{
- float:right;
- color:#c2a66d;
+.tag{
+ display:inline-block;
+ font-size:10px;
+ color:#d4b77f;
+ border:1px solid #655638;
+ padding:5px 8px;
+ border-radius:5px;
+ margin-bottom:10px;
 }
 
 .notice{
- margin-top:25px;
- padding:15px;
- border:1px solid #343943;
- border-radius:10px;
- color:#858991;
+ color:#777f89;
  font-size:11px;
  line-height:1.7;
+ margin:22px 0;
 }
 
 footer{
  text-align:center;
- color:#555b65;
- font-size:10px;
- margin-top:40px;
- letter-spacing:1px;
+ color:#505762;
+ font-size:9px;
+ letter-spacing:2px;
+ margin:35px 0 15px;
 }
 </style>
 </head>
 
 <body>
-<div class="container">
+<main>
 
 <header>
- <div class="logo">
-  <svg viewBox="0 0 24 24" fill="none"
-   stroke="currentColor" stroke-width="1.5">
-   <circle cx="10.5" cy="10.5" r="6.5"/>
-   <path d="m15.5 15.5 5 5M7 10.5h7M10.5 7v7"/>
-  </svg>
- </div>
-
+ <div class="logo">⌕</div>
  <div>
   <div class="brand">SENTINELA</div>
-  <div class="subtitle">OPEN SOURCE INTELLIGENCE</div>
+  <div class="sub">OPEN SOURCE INTELLIGENCE</div>
  </div>
-
- <div class="status">● ONLINE</div>
+ <div class="online">● ONLINE</div>
 </header>
 
-<section class="intro">
- <h1>Investigação digital.</h1>
- <p>
-  Pesquise referências públicas relacionadas
-  a um perfil do Instagram.
- </p>
+<h1>Investigação digital</h1>
+
+<div class="description">
+Central de análise de identificadores e informações públicas.
+</div>
+
+<section class="panel">
+
+<div class="section-title">01 — IDENTIDADE DIGITAL</div>
+
+<div class="field">
+<label for="username">USERNAME</label>
+<input id="username" placeholder="@usuario">
+<div class="hint">Identificador público de plataformas digitais.</div>
+</div>
+
+<div class="field">
+<label for="name">NOME PÚBLICO</label>
+<input id="name" placeholder="Nome e sobrenome">
+<div class="hint">Nome divulgado publicamente ou fornecido para análise.</div>
+</div>
+
 </section>
 
-<section class="searchbox">
- <label class="label" for="target">
-  IDENTIFICADOR DO INSTAGRAM
- </label>
+<section class="panel">
 
- <input
-  id="target"
-  type="text"
-  placeholder="@usuario ou link do perfil"
-  autocomplete="off"
- >
+<div class="section-title">02 — CONTATO PROFISSIONAL</div>
 
- <button id="search">INICIAR PESQUISA</button>
+<div class="field">
+<label for="phone">TELEFONE PUBLICADO</label>
+<input id="phone" type="tel" placeholder="(00) 00000-0000">
+<div class="hint">Somente contato profissional ou comercial divulgado publicamente.</div>
+</div>
+
 </section>
 
-<section id="results">
- <div class="section-title">PESQUISAS DISPONÍVEIS</div>
- <div id="profile"></div>
- <div id="contacts"></div>
- <div id="mentions"></div>
- <div id="links"></div>
+<section class="panel">
+
+<div class="section-title">03 — VEHICLE INTELLIGENCE</div>
+
+<div class="field">
+<label for="plate">PLACA DO VEÍCULO</label>
+<input id="plate" placeholder="ABC1D23" maxlength="7">
+<div class="hint">Identificação do formato brasileiro antigo ou Mercosul.</div>
+</div>
+
+</section>
+
+<button id="analyze">ANALISAR IDENTIFICADORES</button>
+
+<section id="report">
+
+<div class="report-head">
+ <div class="section-title">RELATÓRIO DE ANÁLISE</div>
+ <span class="tag">ANÁLISE LOCAL</span>
+</div>
+
+<div id="results"></div>
+
 </section>
 
 <div class="notice">
- <strong>AVISO DE PRIVACIDADE</strong><br>
- O SENTINELA pesquisa referências públicas.
- Os resultados são fornecidos pelo mecanismo de busca
- e precisam ser verificados. Não acessa contas privadas,
- senhas ou sessões conectadas.
+<strong>PRIVACIDADE E TRANSPARÊNCIA</strong><br>
+O SENTINELA não consulta CPF de terceiros, proprietários de veículos,
+endereços privados, senhas ou sessões de contas. Não considera
+uma semelhança de nomes ou usernames como prova de identidade.
+As verificações desta versão são locais e não representam uma
+investigação automatizada na internet.
 </div>
 
 <footer>
- SENTINELA OSINT — INVESTIGAÇÃO RESPONSÁVEL
+SENTINELA OSINT — INTELLIGENCE SYSTEM
 </footer>
 
-</div>
+</main>
 
 <script>
-const input=document.getElementById("target");
-const results=document.getElementById("results");
+const $ = id => document.getElementById(id);
 
-function getUsername(value){
- value=value.trim();
+function addResult(title,status,description){
+ const div=document.createElement("div");
+ div.className="result";
 
- if(!value)return "";
+ const strong=document.createElement("strong");
+ strong.textContent=title;
 
- value=value.replace(/^@/,"");
+ const tag=document.createElement("span");
+ tag.className="tag";
+ tag.textContent=status;
 
- try{
-  if(value.includes("instagram.com")){
-   const url=new URL(
-    value.startsWith("http") ? value : "https://"+value
-   );
+ const p=document.createElement("p");
+ p.textContent=description;
 
-   const parts=url.pathname.split("/").filter(Boolean);
-   value=parts[0] || "";
-  }
- }catch(e){}
+ div.append(strong,tag,p);
+ $("results").appendChild(div);
+}
 
- value=value.replace(/^@/,"").replace(/\/.*$/,"");
+function validateUsername(value){
+ value=value.trim().replace(/^@/,"");
 
- if(!/^[a-zA-Z0-9._]{1,30}$/.test(value)){
-  return "";
+ if(!value)return null;
+
+ return /^[a-zA-Z0-9._]{1,30}$/.test(value)
+ ? value : false;
+}
+
+function validatePlate(value){
+ value=value.toUpperCase().replace(/[^A-Z0-9]/g,"");
+
+ if(/^[A-Z]{3}[0-9]{4}$/.test(value)){
+  return "Padrão antigo brasileiro";
  }
 
- return value;
+ if(/^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(value)){
+  return "Padrão Mercosul";
+ }
+
+ return false;
 }
 
-function makeSearch(title,description,query){
- const url="https://www.google.com/search?q="+
- encodeURIComponent(query);
+function validatePhone(value){
+ const digits=value.replace(/\D/g,"");
 
- return `
- <a class="result" href="${url}" target="_blank"
- rel="noopener noreferrer">
-  <strong>${title}<span class="arrow">↗</span></strong>
-  <span>${description}</span>
- </a>`;
+ if(!digits)return null;
+
+ if(digits.length===10 || digits.length===11){
+  return "Formato compatível com telefone brasileiro";
+ }
+
+ if(digits.length>=12 && digits.length<=13 && digits.startsWith("55")){
+  return "Formato compatível com telefone brasileiro com DDI";
+ }
+
+ return false;
 }
 
-function investigate(){
- const username=getUsername(input.value);
+function analyze(){
 
- if(!username){
-  alert("Digite um @ válido ou um link de Instagram.");
+ const username=$("username").value;
+ const name=$("name").value.trim();
+ const phone=$("phone").value;
+ const plate=$("plate").value;
+
+ const userResult=validateUsername(username);
+ const phoneResult=validatePhone(phone);
+ const plateResult=validatePlate(plate);
+
+ $("results").innerHTML="";
+
+ let count=0;
+
+ if(username.trim()){
+  count++;
+
+  if(userResult){
+   addResult(
+    "Username",
+    "FORMATO VÁLIDO",
+    "@"+userResult+" foi validado localmente. A existência e a titularidade dos perfis ainda precisam ser verificadas em fontes públicas."
+   );
+  }else{
+   addResult(
+    "Username",
+    "FORMATO INVÁLIDO",
+    "Confira o identificador informado."
+   );
+  }
+ }
+
+ if(name){
+  count++;
+
+  addResult(
+   "Nome público",
+   "INFORMADO",
+   "Nome recebido para análise: "+name+". Nenhuma identidade foi confirmada."
+  );
+ }
+
+ if(phone.trim()){
+  count++;
+
+  addResult(
+   "Telefone",
+   phoneResult || "FORMATO INVÁLIDO",
+   phoneResult || "Confira a quantidade de dígitos do telefone."
+  );
+ }
+
+ if(plate.trim()){
+  count++;
+
+  addResult(
+   "Placa veicular",
+   plateResult || "FORMATO INVÁLIDO",
+   plateResult
+    ? "Placa compatível com "+plateResult+". A validação não identifica o proprietário nem confirma a situação do veículo."
+    : "Não corresponde aos padrões brasileiros reconhecidos nesta validação."
+  );
+ }
+
+ if(count===0){
+  alert("Informe pelo menos um identificador.");
   return;
  }
 
- const exact='"'+username+'"';
-
- document.getElementById("profile").innerHTML=
- makeSearch(
-  "Referências ao perfil",
-  "Pesquisar referências públicas ao nome de usuário.",
-  exact+" Instagram"
+ addResult(
+  "Estado da investigação",
+  "ANÁLISE LOCAL",
+  "Esta versão valida formatos e organiza os dados informados. Não realizou buscas externas nem confirmou correspondências."
  );
 
- document.getElementById("contacts").innerHTML=
- makeSearch(
-  "Contatos publicados",
-  "Procurar contatos profissionais divulgados voluntariamente.",
-  exact+" (contato OR contact OR email OR e-mail)"
- );
+ $("report").style.display="block";
 
- document.getElementById("mentions").innerHTML=
- makeSearch(
-  "Menções na internet",
-  "Localizar páginas públicas que mencionam o identificador.",
-  exact+" -site:instagram.com"
- );
-
- document.getElementById("links").innerHTML=
- makeSearch(
-  "Outros perfis e páginas",
-  "Pesquisar possíveis referências públicas em outros sites.",
-  exact+" perfil OR portfólio OR site"
- );
-
- results.style.display="block";
-
- results.scrollIntoView({
+ $("report").scrollIntoView({
   behavior:"smooth",
   block:"start"
  });
 }
 
-document.getElementById("search")
- .addEventListener("click",investigate);
+$("analyze").addEventListener("click",analyze);
 
-input.addEventListener("keydown",function(e){
- if(e.key==="Enter")investigate();
+$("plate").addEventListener("input",e=>{
+ e.target.value=e.target.value
+ .toUpperCase()
+ .replace(/[^A-Z0-9]/g,"")
+ .slice(0,7);
 });
 </script>
 
