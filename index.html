@@ -398,6 +398,137 @@ function escapeHTML(s){
  }[c]));
 }
 </script>
+
+<!-- NEXUS CORE PANEL CONNECTOR -->
+<script>
+let nexusSocket = null;
+
+function nexusLog(message) {
+  if (typeof log === "function") log(message);
+}
+
+function nexusStatus(text, online) {
+  const header = document.getElementById("headerStatus");
+  const metric = document.getElementById("metricConnection");
+  const device = document.getElementById("deviceStatus");
+
+  if (header) header.textContent = online ? "● CORE ONLINE" : "● OFFLINE";
+  if (metric) {
+    metric.textContent = text;
+    metric.className = online ? "metric green" : "metric red";
+  }
+  if (device) {
+    device.textContent = online ? "AGUARDANDO APP" : "DESCONECTADO";
+  }
+}
+
+function connect() {
+  if (nexusSocket && nexusSocket.readyState < 2) {
+    nexusSocket.close();
+    return;
+  }
+
+  const overlay = document.createElement("div");
+  overlay.style.cssText =
+    "position:fixed;inset:0;background:#000d;z-index:99999;" +
+    "display:grid;place-items:center;padding:20px";
+
+  overlay.innerHTML =
+    '<div style="background:#181313;border:1px solid #ed303b;' +
+    'border-radius:14px;padding:22px;width:100%;max-width:360px">' +
+    '<h3 style="color:white">Conectar ao NEXUS CORE</h3>' +
+    '<p style="color:#aaa;font-size:12px">Digite sua chave de acesso.</p>' +
+    '<input id="nexusTokenInput" type="password" autocomplete="off" ' +
+    'placeholder="Chave de acesso" style="width:100%;padding:12px;' +
+    'background:#090909;color:white;border:1px solid #633;border-radius:8px">' +
+    '<div style="display:flex;gap:8px;margin-top:12px">' +
+    '<button id="nexusStart" class="primary">Conectar</button>' +
+    '<button id="nexusCancel">Cancelar</button>' +
+    '</div></div>';
+
+  document.body.appendChild(overlay);
+
+  const input = overlay.querySelector("#nexusTokenInput");
+
+  overlay.querySelector("#nexusCancel").onclick = () => overlay.remove();
+
+  overlay.querySelector("#nexusStart").onclick = () => {
+    const token = input.value.trim();
+
+    if (!token) {
+      alert("Digite a chave de acesso.");
+      return;
+    }
+
+    const field = document.getElementById("server");
+    const url = field && field.value.trim()
+      ? field.value.trim()
+      : "wss://nexus-core.rodrigoxavier1105.workers.dev/connect";
+
+    if (!url.startsWith("wss://")) {
+      alert("Use um endereço WSS seguro.");
+      return;
+    }
+
+    input.value = "";
+    overlay.remove();
+
+    nexusStatus("Conectando...", false);
+    nexusLog("Iniciando conexao segura com NEXUS CORE.");
+
+    const ws = new WebSocket(url);
+    nexusSocket = ws;
+
+    ws.onopen = () => {
+      ws.send(JSON.stringify({
+        type: "auth",
+        role: "panel",
+        room: "nexus-lab",
+        token: token
+      }));
+    };
+
+    ws.onmessage = event => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch {
+        return;
+      }
+
+      if (data.type === "authenticated") {
+        nexusStatus("CORE AUTENTICADO", true);
+        nexusLog("Painel autenticado no NEXUS CORE.");
+      }
+
+      if (data.type === "peer_connected") {
+        const device = document.getElementById("deviceStatus");
+        if (device) device.textContent = "CONECTADO";
+        nexusLog("Outro dispositivo entrou na sala.");
+      }
+
+      if (data.type === "peer_disconnected") {
+        const device = document.getElementById("deviceStatus");
+        if (device) device.textContent = "DESCONECTADO";
+        nexusLog("Dispositivo saiu da sala.");
+      }
+    };
+
+    ws.onerror = () => {
+      nexusLog("Erro na conexao com NEXUS CORE.");
+    };
+
+    ws.onclose = event => {
+      if (nexusSocket === ws) {
+        nexusSocket = null;
+        nexusStatus("Offline", false);
+        nexusLog("Conexao encerrada. Codigo: " + event.code);
+      }
+    };
+  };
+}
+</script>
+
 </body>
  </html>
  
