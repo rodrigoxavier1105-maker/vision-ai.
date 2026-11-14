@@ -5,28 +5,125 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>VISION AI</title>
+
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js"></script>
+
 <style>
 *{box-sizing:border-box}
-body{margin:0;padding:22px;background:#080b10;color:white;font-family:Arial}
-header{font-size:23px;font-weight:bold;letter-spacing:3px}
+
+body{
+margin:0;
+padding:22px;
+background:#080b10;
+color:white;
+font-family:Arial,sans-serif;
+}
+
+header{
+font-size:23px;
+font-weight:bold;
+letter-spacing:3px;
+}
+
 header span{color:#00e5a0}
-main{max-width:750px;margin:45px auto}
+
+main{
+max-width:750px;
+margin:45px auto;
+}
+
 h1{font-size:32px}
+
 p{color:#929ba8}
-.screen{position:relative;background:#111923;border:1px solid #263342;border-radius:16px;overflow:hidden;margin-top:25px}
-video{width:100%;display:block;transform:none}
-canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;transform:none}
-.controls{display:flex;gap:10px;margin-top:15px}
-button{flex:1;padding:16px 8px;border:0;border-radius:10px;font-weight:bold;font-size:13px}
-#start{background:#00e5a0;color:#00150e}
-#switch{background:#1c2935;color:white;border:1px solid #344657}
-#status{font-size:13px;margin-top:17px;color:#00e5a0}
+
+.screen{
+position:relative;
+background:#111923;
+border:1px solid #263342;
+border-radius:16px;
+overflow:hidden;
+margin-top:25px;
+}
+
+video{
+width:100%;
+display:block;
+}
+
+canvas{
+position:absolute;
+inset:0;
+width:100%;
+height:100%;
+pointer-events:none;
+}
+
+/* Espelhamento somente na câmera frontal */
+.mirrored{
+transform:scaleX(-1);
+}
+
+.controls{
+display:flex;
+gap:10px;
+margin-top:15px;
+}
+
+button{
+flex:1;
+padding:16px 8px;
+border:0;
+border-radius:10px;
+font-weight:bold;
+font-size:13px;
+}
+
+#start{
+background:#00e5a0;
+color:#00150e;
+}
+
+#switch{
+background:#1c2935;
+color:white;
+border:1px solid #344657;
+}
+
+.panel{
+margin-top:18px;
+padding:16px;
+background:#111923;
+border:1px solid #263342;
+border-radius:12px;
+}
+
+.panel h3{
+margin:0 0 12px;
+font-size:14px;
+color:#00e5a0;
+}
+
+.result{
+font-size:14px;
+color:white;
+margin:9px 0;
+}
+
+#status{
+font-size:13px;
+margin-top:17px;
+color:#00e5a0;
+}
 </style>
 </head>
+
 <body>
+
 <header>VISION <span>AI</span></header>
+
 <main>
+
 <h1>Visão computacional.</h1>
 <p>Reconhecimento inteligente em tempo real.</p>
 
@@ -39,24 +136,46 @@ button{flex:1;padding:16px 8px;border:0;border-radius:10px;font-weight:bold;font
 <button id="start">ATIVAR IA</button>
 <button id="switch">TROCAR CÂMERA</button>
 </div>
+
 <div id="status">Aguardando inicialização.</div>
+
+<div class="panel">
+<h3>RECONHECIMENTO DE MÃOS</h3>
+<div class="result" id="handResult">Aguardando mãos...</div>
+</div>
+
+<div class="panel">
+<h3>ANÁLISE FACIAL</h3>
+<div class="result" id="faceResult">Aguardando rosto...</div>
+</div>
+
 </main>
 
 <script>
 const video=document.getElementById("video");
 const canvas=document.getElementById("canvas");
 const ctx=canvas.getContext("2d");
+
 const status=document.getElementById("status");
+const handResult=document.getElementById("handResult");
+const faceResult=document.getElementById("faceResult");
 
 let stream=null;
 let facing="environment";
 let ai=null;
+let faceAI=null;
 let aiActive=false;
 let busy=false;
 
+let handText="Aguardando mãos...";
+let faceText="Aguardando rosto...";
+
 async function openCamera(){
 try{
-if(stream)stream.getTracks().forEach(t=>t.stop());
+
+if(stream){
+stream.getTracks().forEach(t=>t.stop());
+}
 
 stream=await navigator.mediaDevices.getUserMedia({
 audio:false,
@@ -68,59 +187,183 @@ height:{ideal:480}
 });
 
 video.srcObject=stream;
-video.style.transform="none";
-canvas.style.transform="none";
+
+video.classList.toggle("mirrored",facing==="user");
+canvas.classList.toggle("mirrored",facing==="user");
 
 await video.play();
-status.textContent="Câmera funcionando. IA aguardando.";
+
+status.textContent="Câmera funcionando.";
+
 }catch(e){
 status.textContent="Erro da câmera: "+e.name+" - "+e.message;
 }
 }
 
-function draw(results){
+function distance(a,b){
+return Math.sqrt(
+Math.pow(a.x-b.x,2)+
+Math.pow(a.y-b.y,2)
+);
+}
+
+function recognizeGesture(hand){
+
+let thumb=distance(hand[4],hand[5])>
+distance(hand[3],hand[5]);
+
+let index=hand[8].y<hand[6].y;
+let middle=hand[12].y<hand[10].y;
+let ring=hand[16].y<hand[14].y;
+let pinky=hand[20].y<hand[18].y;
+
+let fingers=[thumb,index,middle,ring,pinky];
+let count=fingers.filter(Boolean).length;
+
+if(count===0)return "MÃO FECHADA";
+if(count===5)return "MÃO ABERTA";
+
+if(index && middle && !ring && !pinky)
+return "DOIS DEDOS / PAZ";
+
+if(count===1)return "UM DEDO";
+if(count===2)return "DOIS DEDOS";
+if(count===3)return "TRÊS DEDOS";
+if(count===4)return "QUATRO DEDOS";
+
+return count+" DEDOS";
+}
+
+function drawHands(results){
+
 canvas.width=video.videoWidth;
 canvas.height=video.videoHeight;
+
 ctx.clearRect(0,0,canvas.width,canvas.height);
 
-const all=results.multiHandLandmarks||[];
+const hands=results.multiHandLandmarks||[];
 
-all.forEach(hand=>{
-const links=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+if(hands.length===0){
+handText="Nenhuma mão detectada";
+handResult.textContent=handText;
+return;
+}
+
+hands.forEach((hand,index)=>{
+
+handText="Mão "+(index+1)+": "+recognizeGesture(hand);
+
+const links=[
+[0,1],[1,2],[2,3],[3,4],
+[0,5],[5,6],[6,7],[7,8],
+[5,9],[9,10],[10,11],[11,12],
+[9,13],[13,14],[14,15],[15,16],
+[13,17],[17,18],[18,19],[19,20],
+[0,17]
+];
 
 ctx.strokeStyle="#00e5a0";
 ctx.lineWidth=4;
 
 links.forEach(([a,b])=>{
 ctx.beginPath();
-ctx.moveTo(hand[a].x*canvas.width,hand[a].y*canvas.height);
-ctx.lineTo(hand[b].x*canvas.width,hand[b].y*canvas.height);
+ctx.moveTo(
+hand[a].x*canvas.width,
+hand[a].y*canvas.height
+);
+ctx.lineTo(
+hand[b].x*canvas.width,
+hand[b].y*canvas.height
+);
 ctx.stroke();
 });
 
-hand.forEach(p=>{
+hand.forEach(point=>{
 ctx.beginPath();
-ctx.arc(p.x*canvas.width,p.y*canvas.height,5,0,Math.PI*2);
+ctx.arc(
+point.x*canvas.width,
+point.y*canvas.height,
+5,0,Math.PI*2
+);
 ctx.fillStyle="white";
 ctx.fill();
 });
+
 });
 
-status.textContent=all.length?"Mãos detectadas: "+all.length:"IA ativa. Procurando mãos...";
+handResult.textContent=handText;
+}
+
+function analyzeFace(results){
+
+const faces=results.multiFaceLandmarks||[];
+
+if(faces.length===0){
+faceText="Nenhum rosto detectado";
+faceResult.textContent=faceText;
+return;
+}
+
+const face=faces[0];
+
+const mouthHeight=distance(face[13],face[14]);
+const mouthWidth=distance(face[61],face[291]);
+
+const leftEye=distance(face[159],face[145]);
+const rightEye=distance(face[386],face[374]);
+
+const leftEyeWidth=distance(face[33],face[133]);
+const rightEyeWidth=distance(face[362],face[263]);
+
+const mouthRatio=mouthHeight/(mouthWidth||0.001);
+
+const leftEyeRatio=leftEye/(leftEyeWidth||0.001);
+const rightEyeRatio=rightEye/(rightEyeWidth||0.001);
+
+let observations=[];
+
+if(mouthRatio>0.25){
+observations.push("Boca aberta");
+}else{
+observations.push("Boca fechada");
+}
+
+if(leftEyeRatio<0.12 && rightEyeRatio<0.12){
+observations.push("Olhos possivelmente fechados");
+}else{
+observations.push("Olhos abertos");
+}
+
+const faceWidth=distance(face[234],face[454]);
+const smileWidth=mouthWidth/(faceWidth||0.001);
+
+if(smileWidth>0.38 && mouthRatio<0.25){
+observations.push("Sorriso provável");
+}
+
+faceText=observations.join(" | ");
+faceResult.textContent=faceText;
 }
 
 async function startAI(){
+
 if(aiActive)return;
 
 try{
-if(!video.srcObject)await openCamera();
+
+if(!video.srcObject){
+await openCamera();
+}
+
 if(!video.srcObject)return;
 
 status.textContent="Carregando inteligência artificial...";
 
 if(!ai){
+
 ai=new Hands({
-locateFile:file=>"https://cdn.jsdelivr.net/npm/@mediapipe/hands/"+file
+locateFile:file=>
+"https://cdn.jsdelivr.net/npm/@mediapipe/hands/"+file
 });
 
 ai.setOptions({
@@ -130,52 +373,100 @@ minDetectionConfidence:0.6,
 minTrackingConfidence:0.6
 });
 
-ai.onResults(draw);
+ai.onResults(drawHands);
+
+}
+
+if(!faceAI){
+
+faceAI=new FaceMesh({
+locateFile:file=>
+"https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/"+file
+});
+
+faceAI.setOptions({
+maxNumFaces:1,
+refineLandmarks:true,
+minDetectionConfidence:0.5,
+minTrackingConfidence:0.5
+});
+
+faceAI.onResults(analyzeFace);
+
 }
 
 aiActive=true;
-status.textContent="IA ativa. Mostre suas mãos.";
+status.textContent="VISION AI ATIVA";
 process();
 
 }catch(e){
+
 aiActive=false;
 status.textContent="Erro na IA: "+e.message;
+
 }
+
 }
 
 async function process(){
+
 if(!aiActive)return;
 
 if(video.readyState>=2&&!busy){
+
 busy=true;
+
 try{
+
 await ai.send({image:video});
+await faceAI.send({image:video});
+
 }catch(e){
+
 status.textContent="Erro de processamento: "+e.message;
 aiActive=false;
-}
-busy=false;
+
 }
 
-if(aiActive)requestAnimationFrame(process);
+busy=false;
+
+}
+
+if(aiActive){
+requestAnimationFrame(process);
+}
+
 }
 
 document.getElementById("start").onclick=startAI;
 
 document.getElementById("switch").onclick=async()=>{
+
 aiActive=false;
+
 facing=facing==="environment"?"user":"environment";
-await openCamera();
 
 if(ai){
 await ai.close();
 ai=null;
 }
 
+if(faceAI){
+await faceAI.close();
+faceAI=null;
+}
+
+await openCamera();
+
+handResult.textContent="Câmera trocada. Ative a IA.";
+faceResult.textContent="Aguardando ativação.";
+
 status.textContent="Câmera trocada. Toque em ATIVAR IA.";
+
 };
 
 openCamera();
+
 </script>
 </body>
 </html>
