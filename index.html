@@ -3,228 +3,342 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>SENTINELA AI</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0b0d11">
+<title>SENTINELA OSINT</title>
+
 <style>
 *{box-sizing:border-box}
+
 body{
- margin:0;background:#080d13;color:#eaf1f7;
- font-family:Arial,sans-serif;padding:20px;
+ margin:0;
+ min-height:100vh;
+ background:#0b0d11;
+ color:#eeeae1;
+ font-family:Arial,sans-serif;
+ padding:24px 16px;
 }
-header{display:flex;align-items:center;gap:12px;margin-bottom:22px}
+
+.container{
+ max-width:520px;
+ margin:auto;
+}
+
+header{
+ display:flex;
+ align-items:center;
+ gap:12px;
+ margin:18px 0 55px;
+}
+
 .logo{
- width:43px;height:43px;border-radius:12px;
- background:#142d32;color:#55d6ad;
- display:grid;place-items:center;font-size:23px
+ width:45px;
+ height:45px;
+ border:1px solid #9b8050;
+ border-radius:50%;
+ display:grid;
+ place-items:center;
+ color:#d2b77d;
+ font-size:23px;
 }
-h1{font-size:19px;margin:0;letter-spacing:1px}
-header p{margin:4px 0 0;color:#81909e;font-size:12px}
-.status{margin-left:auto;color:#55d6ad;font-size:11px}
-main{max-width:650px;margin:auto}
-.camera{
- width:100%;background:#111a24;border:1px solid #263443;
- border-radius:15px;overflow:hidden;position:relative;
+
+.logo svg{width:27px;height:27px}
+
+.brand{
+ font-size:19px;
+ letter-spacing:3px;
+ font-weight:bold;
 }
-video{display:none}
-canvas{display:block;width:100%;height:auto;min-height:220px}
-.placeholder{
- position:absolute;inset:0;display:grid;place-items:center;
- color:#718294;font-size:14px;pointer-events:none
+
+.subtitle{
+ color:#777b83;
+ font-size:10px;
+ letter-spacing:2px;
+ margin-top:5px;
 }
-.controls{display:flex;gap:10px;margin:15px 0}
+
+.status{
+ margin-left:auto;
+ color:#8caa8e;
+ font-size:10px;
+}
+
+.intro{text-align:center;margin-bottom:30px}
+
+.intro h1{
+ font-size:27px;
+ letter-spacing:1px;
+ margin:0 0 12px;
+}
+
+.intro p{
+ color:#858991;
+ font-size:13px;
+ line-height:1.7;
+ margin:0;
+}
+
+.searchbox{
+ background:#14171d;
+ border:1px solid #343943;
+ border-radius:13px;
+ padding:17px;
+}
+
+.label{
+ display:block;
+ color:#bba477;
+ font-size:10px;
+ letter-spacing:2px;
+ margin-bottom:12px;
+}
+
+input{
+ width:100%;
+ background:#0c0f14;
+ border:1px solid #303641;
+ border-radius:9px;
+ padding:16px;
+ color:white;
+ font-size:15px;
+ outline:none;
+}
+
+input:focus{border-color:#b99b62}
+
 button{
- border:0;border-radius:10px;padding:15px 12px;
- font-size:14px;font-weight:bold;cursor:pointer
+ width:100%;
+ margin-top:12px;
+ padding:16px;
+ border:0;
+ border-radius:9px;
+ background:#c2a66d;
+ color:#17140e;
+ font-weight:bold;
+ letter-spacing:1px;
+ cursor:pointer;
 }
-#start{background:#43c69b;color:#06130f;flex:1}
-#stop{background:#253341;color:white}
-.stats{
- display:grid;grid-template-columns:1fr 1fr;gap:12px
+
+button:active{opacity:.8}
+
+#results{display:none;margin-top:25px}
+
+.section-title{
+ font-size:11px;
+ color:#bba477;
+ letter-spacing:2px;
+ margin-bottom:13px;
 }
-.stat{
- background:#111a24;border:1px solid #263443;
- padding:17px;border-radius:12px
+
+.result{
+ display:block;
+ background:#14171d;
+ border:1px solid #292e37;
+ border-radius:11px;
+ padding:16px;
+ margin-bottom:10px;
+ text-decoration:none;
+ color:#eeeae1;
 }
-.stat small{color:#91a0af;font-size:11px}
-.stat strong{display:block;font-size:28px;margin-top:8px}
-.events{
- margin-top:14px;background:#111a24;
- border:1px solid #263443;border-radius:12px;padding:16px
+
+.result strong{
+ display:block;
+ font-size:14px;
+ margin-bottom:7px;
 }
-.events h3{font-size:14px;margin:0 0 12px}
-#log{font-size:12px;color:#aab8c5;line-height:1.8}
-footer{text-align:center;color:#526171;font-size:11px;margin:22px}
+
+.result span{
+ color:#858991;
+ font-size:12px;
+ line-height:1.5;
+}
+
+.result .arrow{
+ float:right;
+ color:#c2a66d;
+}
+
+.notice{
+ margin-top:25px;
+ padding:15px;
+ border:1px solid #343943;
+ border-radius:10px;
+ color:#858991;
+ font-size:11px;
+ line-height:1.7;
+}
+
+footer{
+ text-align:center;
+ color:#555b65;
+ font-size:10px;
+ margin-top:40px;
+ letter-spacing:1px;
+}
 </style>
 </head>
+
 <body>
+<div class="container">
+
 <header>
- <div class="logo">⬡</div>
- <div>
-  <h1>SENTINELA AI</h1>
-  <p>Monitoramento inteligente</p>
+ <div class="logo">
+  <svg viewBox="0 0 24 24" fill="none"
+   stroke="currentColor" stroke-width="1.5">
+   <circle cx="10.5" cy="10.5" r="6.5"/>
+   <path d="m15.5 15.5 5 5M7 10.5h7M10.5 7v7"/>
+  </svg>
  </div>
- <div class="status" id="status">● DESLIGADO</div>
+
+ <div>
+  <div class="brand">SENTINELA</div>
+  <div class="subtitle">OPEN SOURCE INTELLIGENCE</div>
+ </div>
+
+ <div class="status">● ONLINE</div>
 </header>
 
-<main>
- <div class="camera">
-  <video id="video" playsinline muted></video>
-  <canvas id="canvas" width="640" height="480"></canvas>
-  <div class="placeholder" id="placeholder">
-   Câmera aguardando ativação
-  </div>
- </div>
+<section class="intro">
+ <h1>Investigação digital.</h1>
+ <p>
+  Pesquise referências públicas relacionadas
+  a um perfil do Instagram.
+ </p>
+</section>
 
- <div class="controls">
-  <button id="start">INICIAR MONITORAMENTO</button>
-  <button id="stop">PARAR</button>
- </div>
+<section class="searchbox">
+ <label class="label" for="target">
+  IDENTIFICADOR DO INSTAGRAM
+ </label>
 
- <div class="stats">
-  <div class="stat">
-   <small>PESSOAS DETECTADAS</small>
-   <strong id="count">0</strong>
-  </div>
-  <div class="stat">
-   <small>OCORRÊNCIAS</small>
-   <strong id="alerts">0</strong>
-  </div>
- </div>
+ <input
+  id="target"
+  type="text"
+  placeholder="@usuario ou link do perfil"
+  autocomplete="off"
+ >
 
- <div class="events">
-  <h3>HISTÓRICO DE EVENTOS</h3>
-  <div id="log">Sistema aguardando inicialização.</div>
- </div>
-</main>
+ <button id="search">INICIAR PESQUISA</button>
+</section>
 
-<footer>SENTINELA AI • SISTEMA DE VISÃO COMPUTACIONAL</footer>
+<section id="results">
+ <div class="section-title">PESQUISAS DISPONÍVEIS</div>
+ <div id="profile"></div>
+ <div id="contacts"></div>
+ <div id="mentions"></div>
+ <div id="links"></div>
+</section>
+
+<div class="notice">
+ <strong>AVISO DE PRIVACIDADE</strong><br>
+ O SENTINELA pesquisa referências públicas.
+ Os resultados são fornecidos pelo mecanismo de busca
+ e precisam ser verificados. Não acessa contas privadas,
+ senhas ou sessões conectadas.
+</div>
+
+<footer>
+ SENTINELA OSINT — INVESTIGAÇÃO RESPONSÁVEL
+</footer>
+
+</div>
 
 <script>
-const video=document.getElementById("video");
-const canvas=document.getElementById("canvas");
-const ctx=canvas.getContext("2d");
-const start=document.getElementById("start");
-const stop=document.getElementById("stop");
-const status=document.getElementById("status");
-const placeholder=document.getElementById("placeholder");
-const count=document.getElementById("count");
-const alerts=document.getElementById("alerts");
-const log=document.getElementById("log");
+const input=document.getElementById("target");
+const results=document.getElementById("results");
 
-let stream=null;
-let running=false;
-let detector=null;
-let lastDetection=0;
-let eventCount=0;
+function getUsername(value){
+ value=value.trim();
 
-function event(text){
- const time=new Date().toLocaleTimeString("pt-BR");
- log.innerHTML=time+" — "+text+"<br>"+log.innerHTML;
-}
+ if(!value)return "";
 
-async function loadDetector(){
- if(detector)return detector;
- if(!("BarcodeDetector" in window) && !("FaceDetector" in window)){
-   // O detector de pessoas será carregado pela biblioteca abaixo.
- }
- const vision=await import(
- "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/+esm"
- );
- const tf=await import(
- "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.22.0/+esm"
- );
- await tf.ready();
- detector=await vision.load({base:"lite_mobilenet_v2"});
- return detector;
-}
+ value=value.replace(/^@/,"");
 
-function draw(){
- if(!running)return;
- if(video.readyState>=2){
-  ctx.drawImage(video,0,0,canvas.width,canvas.height);
- }
- requestAnimationFrame(draw);
-}
-
-async function detect(){
- while(running){
-  if(detector && video.readyState>=2){
-   try{
-    const predictions=await detector.detect(video,10,0.45);
-    ctx.drawImage(video,0,0,canvas.width,canvas.height);
-    let people=0;
-    for(const p of predictions){
-     if(p.class!=="person")continue;
-     people++;
-     const [x,y,w,h]=p.bbox;
-     const sx=canvas.width/video.videoWidth;
-     const sy=canvas.height/video.videoHeight;
-     ctx.strokeStyle="#48e0ad";
-     ctx.lineWidth=3;
-     ctx.strokeRect(x*sx,y*sy,w*sx,h*sy);
-     ctx.fillStyle="#48e0ad";
-     ctx.fillRect(x*sx,y*sy,95,22);
-     ctx.fillStyle="#07130f";
-     ctx.font="bold 12px Arial";
-     ctx.fillText("PESSOA",x*sx+5,y*sy+15);
-    }
-    count.textContent=people;
-   }catch(e){}
-  }
-  await new Promise(r=>setTimeout(r,350));
- }
-}
-
-start.addEventListener("click",async()=>{
- if(running)return;
  try{
-  status.textContent="● INICIANDO";
-  stream=await navigator.mediaDevices.getUserMedia({
-   audio:false,
-   video:{
-    facingMode:"environment",
-    width:{ideal:640},
-    height:{ideal:480}
-   }
-  });
-  video.srcObject=stream;
-  await video.play();
-  canvas.width=640;
-  canvas.height=480;
-  running=true;
-  placeholder.style.display="none";
-  status.textContent="● CÂMERA ATIVA";
-  event("Câmera iniciada.");
-  requestAnimationFrame(draw);
-  event("Carregando inteligência artificial...");
-  await loadDetector();
-  if(running){
-   status.textContent="● IA ATIVA";
-   event("Detector de pessoas pronto.");
-   detect();
+  if(value.includes("instagram.com")){
+   const url=new URL(
+    value.startsWith("http") ? value : "https://"+value
+   );
+
+   const parts=url.pathname.split("/").filter(Boolean);
+   value=parts[0] || "";
   }
- }catch(e){
-  status.textContent="● ERRO";
-  event("Não foi possível iniciar: "+e.message);
-  running=false;
+ }catch(e){}
+
+ value=value.replace(/^@/,"").replace(/\/.*$/,"");
+
+ if(!/^[a-zA-Z0-9._]{1,30}$/.test(value)){
+  return "";
  }
-});
 
-stop.addEventListener("click",()=>{
- running=false;
- if(stream)stream.getTracks().forEach(t=>t.stop());
- stream=null;
- video.srcObject=null;
- ctx.clearRect(0,0,canvas.width,canvas.height);
- placeholder.style.display="grid";
- status.textContent="● DESLIGADO";
- count.textContent="0";
- event("Monitoramento encerrado.");
-});
+ return value;
+}
 
-window.addEventListener("pagehide",()=>{
- if(stream)stream.getTracks().forEach(t=>t.stop());
+function makeSearch(title,description,query){
+ const url="https://www.google.com/search?q="+
+ encodeURIComponent(query);
+
+ return `
+ <a class="result" href="${url}" target="_blank"
+ rel="noopener noreferrer">
+  <strong>${title}<span class="arrow">↗</span></strong>
+  <span>${description}</span>
+ </a>`;
+}
+
+function investigate(){
+ const username=getUsername(input.value);
+
+ if(!username){
+  alert("Digite um @ válido ou um link de Instagram.");
+  return;
+ }
+
+ const exact='"'+username+'"';
+
+ document.getElementById("profile").innerHTML=
+ makeSearch(
+  "Referências ao perfil",
+  "Pesquisar referências públicas ao nome de usuário.",
+  exact+" Instagram"
+ );
+
+ document.getElementById("contacts").innerHTML=
+ makeSearch(
+  "Contatos publicados",
+  "Procurar contatos profissionais divulgados voluntariamente.",
+  exact+" (contato OR contact OR email OR e-mail)"
+ );
+
+ document.getElementById("mentions").innerHTML=
+ makeSearch(
+  "Menções na internet",
+  "Localizar páginas públicas que mencionam o identificador.",
+  exact+" -site:instagram.com"
+ );
+
+ document.getElementById("links").innerHTML=
+ makeSearch(
+  "Outros perfis e páginas",
+  "Pesquisar possíveis referências públicas em outros sites.",
+  exact+" perfil OR portfólio OR site"
+ );
+
+ results.style.display="block";
+
+ results.scrollIntoView({
+  behavior:"smooth",
+  block:"start"
+ });
+}
+
+document.getElementById("search")
+ .addEventListener("click",investigate);
+
+input.addEventListener("keydown",function(e){
+ if(e.key==="Enter")investigate();
 });
 </script>
+
 </body>
 </html>
